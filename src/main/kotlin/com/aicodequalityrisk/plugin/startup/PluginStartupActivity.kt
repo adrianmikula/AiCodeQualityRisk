@@ -17,20 +17,17 @@ class PluginStartupActivity : ProjectActivity {
     override suspend fun execute(project: Project) {
         val orchestrator = project.service<AnalysisOrchestrator>()
         val connection = project.messageBus.connect(project)
+        val fire: (TriggerType) -> Unit = { orchestrator.trigger(it) }
 
         val listener = object : DocumentListener {
-            override fun documentChanged(event: DocumentEvent) {
-                orchestrator.trigger(TriggerType.EDIT)
-            }
+            override fun documentChanged(event: DocumentEvent) = fire(TriggerType.EDIT)
         }
 
         val multicaster = com.intellij.openapi.editor.EditorFactory.getInstance().eventMulticaster
         multicaster.addDocumentListener(listener, project)
         com.intellij.openapi.editor.EditorFactory.getInstance().addEditorFactoryListener(
             object : EditorFactoryListener {
-                override fun editorCreated(event: EditorFactoryEvent) {
-                    orchestrator.trigger(TriggerType.FOCUS)
-                }
+                override fun editorCreated(event: EditorFactoryEvent) = fire(TriggerType.FOCUS)
             },
             project
         )
@@ -38,18 +35,14 @@ class PluginStartupActivity : ProjectActivity {
         connection.subscribe(
             FileEditorManagerListener.FILE_EDITOR_MANAGER,
             object : FileEditorManagerListener {
-                override fun selectionChanged(event: FileEditorManagerEvent) {
-                    orchestrator.trigger(TriggerType.FOCUS)
-                }
+                override fun selectionChanged(event: FileEditorManagerEvent) = fire(TriggerType.FOCUS)
             }
         )
 
         connection.subscribe(
             FileDocumentManagerListener.TOPIC,
             object : FileDocumentManagerListener {
-                override fun beforeDocumentSaving(document: com.intellij.openapi.editor.Document) {
-                    orchestrator.trigger(TriggerType.SAVE)
-                }
+                override fun beforeDocumentSaving(document: com.intellij.openapi.editor.Document) = fire(TriggerType.SAVE)
             }
         )
     }

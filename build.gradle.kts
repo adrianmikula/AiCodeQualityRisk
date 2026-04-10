@@ -20,6 +20,7 @@ intellij {
 }
 
 dependencies {
+    implementation("org.yaml:snakeyaml:2.0")
     testImplementation(kotlin("test"))
 }
 

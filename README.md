@@ -29,7 +29,28 @@ This repository contains a Kotlin-based IntelliJ plugin MVP that analyzes in-pro
 
 Note: this workspace may be mounted with `noexec`, so prefer running wrapper commands via `bash gradlew ...`.
 
-## Test
+## Setup with Mise (Recommended)
+
+[Mise](https://mise.jdx.dev/) is used to manage development tools and common commands.
+
+1. Install Mise: `curl https://mise.jdx.dev/install.sh | sh`
+2. Add to your shell: `echo "eval \"\$(~/.local/bin/mise activate bash)\"" >> ~/.bashrc`
+3. In the project directory: `mise trust` and `mise install`
+
+Common commands:
+- `mise run build` - Build the project
+- `mise run test` - Run tests
+- `mise run run-ide` - Run IntelliJ sandbox
+- `mise run clean` - Clean build artifacts
+- `mise run check` - Run all checks
+- `mise run assemble` - Assemble the plugin
+- `mise run install` - Install distribution
+
+## Manual Setup (Alternative)
+
+If not using Mise, ensure JDK 21 is available.
+
+### Test
 
 ```bash
 JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64 \
@@ -37,7 +58,7 @@ PATH="/usr/lib/jvm/java-21-openjdk-amd64/bin:$PATH" \
 bash gradlew test
 ```
 
-## Run IntelliJ Sandbox
+### Run IntelliJ Sandbox
 
 ```bash
 JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64 \

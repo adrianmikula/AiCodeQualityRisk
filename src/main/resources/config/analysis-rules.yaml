@@ -1,0 +1,71 @@
+rules:
+  - name: "todo_marker"
+    pattern:
+      type: "complex"
+      conditions:
+        - type: "contains"
+          target: "diffText"
+          value: "TODO"
+        - type: "contains"
+          target: "fileSnapshot"
+          value: "TODO"
+    scoreDelta: 8
+    category: "COMPLEXITY"
+    finding:
+      title: "Deferred work marker detected"
+      detail: "TODO markers often indicate incomplete behavior in changed code."
+      severity: "LOW"
+
+  - name: "null_assertion"
+    pattern:
+      type: "contains"
+      target: "fileSnapshot"
+      value: "!!"
+    scoreDelta: 30
+    category: "SECURITY"
+    finding:
+      title: "Potential null safety issue"
+      detail: "Non-null assertion detected (`!!`), which may throw at runtime."
+      severity: "HIGH"
+
+  - name: "broad_exception"
+    pattern:
+      type: "regex"
+      target: "fileSnapshot"
+      value: "catch\\s*\\(\\s*Exception"
+    scoreDelta: 18
+    category: "SECURITY"
+    finding:
+      title: "Broad exception catch"
+      detail: "Catching broad Exception can hide root causes and reduce recoverability."
+      severity: "MEDIUM"
+
+  - name: "thread_sleep"
+    pattern:
+      type: "regex"
+      target: "fileSnapshot"
+      value: "Thread\\.sleep\\("
+    scoreDelta: 12
+    category: "PERFORMANCE"
+    finding:
+      title: "Blocking call in code path"
+      detail: "Thread.sleep usage can create responsiveness and timing issues."
+      severity: "MEDIUM"
+
+  - name: "complex_change"
+    pattern:
+      type: "complex"
+      conditions:
+        - type: "regex"
+          target: "diffText"
+          value: "(?m)^\\+.*(if|for|while)\\s*\\("
+        - type: "length"
+          target: "diffText"
+          operator: ">"
+          value: 2000
+    scoreDelta: 14
+    category: "COMPLEXITY"
+    finding:
+      title: "Complex change footprint"
+      detail: "Large control-flow-heavy diff raises review and regression risk."
+      severity: "MEDIUM"

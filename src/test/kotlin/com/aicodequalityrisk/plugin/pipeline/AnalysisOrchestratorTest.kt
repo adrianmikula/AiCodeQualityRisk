@@ -28,6 +28,10 @@ class AnalysisOrchestratorTest {
             analyze = {
                 RiskResult(
                     score = 25,
+                    complexityScore = 10,
+                    duplicationScore = 5,
+                    performanceScore = 5,
+                    securityScore = 5,
                     findings = listOf(Finding("Test", "Detail", Severity.LOW)),
                     explanations = listOf("ok"),
                     sourceFilePath = it.filePath

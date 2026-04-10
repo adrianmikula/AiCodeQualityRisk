@@ -1,0 +1,11 @@
+[tools]
+java = "21"
+
+[tasks]
+build = "bash gradlew build"
+test = "bash gradlew test"
+run-ide = "bash gradlew runIde"
+clean = "bash gradlew clean"
+check = "bash gradlew check"
+assemble = "bash gradlew assemble"
+install = "bash gradlew installDist"

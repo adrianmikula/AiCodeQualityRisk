@@ -17,6 +17,10 @@ enum class TriggerType {
 
 data class RiskResult(
     val score: Int,
+    val complexityScore: Int,
+    val duplicationScore: Int,
+    val performanceScore: Int,
+    val securityScore: Int,
     val findings: List<Finding>,
     val explanations: List<String>,
     val sourceFilePath: String?

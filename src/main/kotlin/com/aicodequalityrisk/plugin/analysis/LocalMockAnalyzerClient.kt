@@ -9,57 +9,30 @@ import com.intellij.openapi.components.Service
 @Service(Service.Level.PROJECT)
 class LocalMockAnalyzerClient : AnalyzerClient {
 
+    private val configLoader = AnalysisConfigLoader()
+    private val ruleFactory = RuleFactory()
+    private val rules: List<Rule> by lazy {
+        val config = configLoader.loadConfig()
+        config.rules.map { ruleFactory.createRule(it) }
+    }
+
     override fun analyze(input: AnalysisInput): RiskResult {
-        val findings = mutableListOf<Finding>()
-        val diff = input.diffText
-        val snapshot = input.fileSnapshot
+        var totalScore = 8
+        var complexityScore = 0
+        var duplicationScore = 0
+        var performanceScore = 0
+        var securityScore = 0
 
-        var score = 8
-
-        if (diff.contains("TODO") || snapshot.contains("TODO")) {
-            findings += Finding(
-                title = "Deferred work marker detected",
-                detail = "TODO markers often indicate incomplete behavior in changed code.",
-                severity = Severity.LOW
-            )
-            score += 8
-        }
-
-        if (snapshot.contains("!!")) {
-            findings += Finding(
-                title = "Potential null safety issue",
-                detail = "Non-null assertion detected (`!!`), which may throw at runtime.",
-                severity = Severity.HIGH
-            )
-            score += 30
-        }
-
-        if (Regex("""catch\s*\(\s*Exception""").containsMatchIn(snapshot)) {
-            findings += Finding(
-                title = "Broad exception catch",
-                detail = "Catching broad Exception can hide root causes and reduce recoverability.",
-                severity = Severity.MEDIUM
-            )
-            score += 18
-        }
-
-        if (Regex("""Thread\.sleep\(""").containsMatchIn(snapshot)) {
-            findings += Finding(
-                title = "Blocking call in code path",
-                detail = "Thread.sleep usage can create responsiveness and timing issues.",
-                severity = Severity.MEDIUM
-            )
-            score += 12
-        }
-
-        if (Regex("""(?m)^\+.*(if|for|while)\s*\(""").containsMatchIn(diff) && diff.length > 2000) {
-            findings += Finding(
-                title = "Complex change footprint",
-                detail = "Large control-flow-heavy diff raises review and regression risk.",
-                severity = Severity.MEDIUM
-            )
-            score += 14
-        }
+        val findings = rules.filter { it.matches(input) }.map { rule ->
+            totalScore += rule.scoreDelta
+            when (rule.category) {
+                Category.COMPLEXITY -> complexityScore += rule.scoreDelta
+                Category.DUPLICATION -> duplicationScore += rule.scoreDelta
+                Category.PERFORMANCE -> performanceScore += rule.scoreDelta
+                Category.SECURITY -> securityScore += rule.scoreDelta
+            }
+            rule.finding
+        }.toMutableList()
 
         if (findings.isEmpty()) {
             findings += Finding(
@@ -67,10 +40,15 @@ class LocalMockAnalyzerClient : AnalyzerClient {
                 detail = "Current heuristics found no obvious risk hotspots in this change set.",
                 severity = Severity.LOW
             )
-            score += 5
+            totalScore += 5
         }
 
-        val boundedScore = score.coerceIn(0, 100)
+        val boundedScore = totalScore.coerceIn(0, 100)
+        val boundedComplexity = complexityScore.coerceIn(0, 100)
+        val boundedDuplication = duplicationScore.coerceIn(0, 100)
+        val boundedPerformance = performanceScore.coerceIn(0, 100)
+        val boundedSecurity = securityScore.coerceIn(0, 100)
+
         val explanations = listOf(
             "Risk score combines lightweight syntax heuristics and diff footprint signals.",
             "Use this score as triage guidance; prioritize HIGH severity findings first."
@@ -78,6 +56,10 @@ class LocalMockAnalyzerClient : AnalyzerClient {
 
         return RiskResult(
             score = boundedScore,
+            complexityScore = boundedComplexity,
+            duplicationScore = boundedDuplication,
+            performanceScore = boundedPerformance,
+            securityScore = boundedSecurity,
             findings = findings.take(7),
             explanations = explanations,
             sourceFilePath = input.filePath
