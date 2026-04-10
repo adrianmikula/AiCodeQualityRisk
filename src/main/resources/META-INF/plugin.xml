@@ -1,0 +1,40 @@
+<idea-plugin>
+    <id>com.aicodequalityrisk.plugin</id>
+    <name>AI Code Quality Risk</name>
+    <vendor email="support@example.com">AI Code Quality Risk</vendor>
+
+    <description>
+        <![CDATA[
+        Analyze in-progress code changes and display a risk score with findings in a dedicated tool window.
+        ]]>
+    </description>
+
+    <depends>com.intellij.modules.platform</depends>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <projectService serviceImplementation="com.aicodequalityrisk.plugin.state.AnalysisStateStore"/>
+        <projectService serviceImplementation="com.aicodequalityrisk.plugin.capture.DiffCaptureService"/>
+        <projectService serviceImplementation="com.aicodequalityrisk.plugin.pipeline.AnalysisOrchestrator"/>
+        <projectService serviceImplementation="com.aicodequalityrisk.plugin.analysis.LocalMockAnalyzerClient"/>
+
+        <postStartupActivity implementation="com.aicodequalityrisk.plugin.startup.PluginStartupActivity"/>
+
+        <toolWindow
+                id="AI Code Risk"
+                anchor="right"
+                factoryClass="com.aicodequalityrisk.plugin.ui.RiskToolWindowFactory"
+                canCloseContent="false"/>
+
+        <editorLinePainter implementation="com.aicodequalityrisk.plugin.editor.InlineRiskLinePainter"/>
+    </extensions>
+
+    <actions>
+        <action
+                id="AI.CodeRisk.AnalyzeCurrentFile"
+                class="com.aicodequalityrisk.plugin.actions.AnalyzeCurrentFileAction"
+                text="Analyze Current File Risk"
+                description="Run AI code risk analysis on the current file">
+            <add-to-group group-id="EditorPopupMenu" anchor="last"/>
+        </action>
+    </actions>
+</idea-plugin>

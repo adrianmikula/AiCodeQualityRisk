@@ -1,0 +1,25 @@
+# Gradle
+.gradle/
+build/
+out/
+
+# IntelliJ / IDE
+.idea/
+*.iml
+
+# VSCode local settings
+.vscode/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# IntelliJ sandbox/runtime dirs (if created locally)
+idea-sandbox/
+sandbox/
+
+# Local plugin distribution archives
+*.zip
