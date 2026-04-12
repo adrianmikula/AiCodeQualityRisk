@@ -13,7 +13,7 @@ repositories {
 }
 
 intellij {
-    version.set("2024.3")
+    version.set("2024.1")
     type.set("IC")
     plugins.set(emptyList())
     sandboxDir.set("/tmp/aicodequalityrisk-idea/sandbox")

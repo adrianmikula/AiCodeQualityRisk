@@ -32,7 +32,7 @@ rules:
     pattern:
       type: "regex"
       target: "fileSnapshot"
-      value: "catch\\s*\\(\\s*Exception"
+      value: "catch\\s*\\(.*Exception"
     scoreDelta: 18
     category: "SECURITY"
     finding:
@@ -62,7 +62,7 @@ rules:
         - type: "length"
           target: "diffText"
           operator: ">"
-          value: 2000
+          value: 200
     scoreDelta: 14
     category: "COMPLEXITY"
     finding:

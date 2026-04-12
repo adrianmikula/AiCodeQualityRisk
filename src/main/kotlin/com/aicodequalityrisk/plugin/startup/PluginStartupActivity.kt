@@ -17,6 +17,7 @@ import com.intellij.openapi.startup.ProjectActivity
 
 class PluginStartupActivity : ProjectActivity {
     override suspend fun execute(project: Project) {
+
         val orchestrator = project.service<AnalysisOrchestrator>()
         val connection = project.messageBus.connect(project)
         val fire: (TriggerType) -> Unit = { orchestrator.trigger(it) }
