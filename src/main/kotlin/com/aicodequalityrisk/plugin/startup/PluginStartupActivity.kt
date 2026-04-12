@@ -3,11 +3,13 @@ package com.aicodequalityrisk.plugin.startup
 import com.aicodequalityrisk.plugin.model.TriggerType
 import com.aicodequalityrisk.plugin.pipeline.AnalysisOrchestrator
 import com.intellij.openapi.components.service
+import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.editor.event.DocumentEvent
 import com.intellij.openapi.editor.event.DocumentListener
 import com.intellij.openapi.editor.event.EditorFactoryEvent
 import com.intellij.openapi.editor.event.EditorFactoryListener
 import com.intellij.openapi.fileEditor.FileDocumentManagerListener
+import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.FileEditorManagerEvent
 import com.intellij.openapi.fileEditor.FileEditorManagerListener
 import com.intellij.openapi.project.Project
@@ -45,5 +47,14 @@ class PluginStartupActivity : ProjectActivity {
                 override fun beforeDocumentSaving(document: com.intellij.openapi.editor.Document) = fire(TriggerType.SAVE)
             }
         )
+
+        if (FileEditorManager.getInstance(project).selectedTextEditor != null) {
+            logger.info("Project startup detected active editor; triggering initial risk analysis.")
+            fire(TriggerType.FOCUS)
+        }
+    }
+
+    companion object {
+        private val logger = Logger.getInstance(PluginStartupActivity::class.java)
     }
 }

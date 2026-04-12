@@ -5,10 +5,12 @@ import com.aicodequalityrisk.plugin.model.Finding
 import com.aicodequalityrisk.plugin.model.RiskResult
 import com.aicodequalityrisk.plugin.model.Severity
 import com.intellij.openapi.components.Service
+import com.intellij.openapi.diagnostic.Logger
 
 @Service(Service.Level.PROJECT)
 class LocalMockAnalyzerClient : AnalyzerClient {
 
+    private val logger = Logger.getInstance(LocalMockAnalyzerClient::class.java)
     private val configLoader = AnalysisConfigLoader()
     private val ruleFactory = RuleFactory()
     private val rules: List<Rule> by lazy {
@@ -17,6 +19,7 @@ class LocalMockAnalyzerClient : AnalyzerClient {
     }
 
     override fun analyze(input: AnalysisInput): RiskResult {
+        logger.debug("Analyzing file=${input.filePath} trigger=${input.trigger}")
         var totalScore = 8
         var complexityScore = 0
         var duplicationScore = 0
@@ -31,8 +34,22 @@ class LocalMockAnalyzerClient : AnalyzerClient {
                 Category.PERFORMANCE -> performanceScore += rule.scoreDelta
                 Category.SECURITY -> securityScore += rule.scoreDelta
             }
-            rule.finding
+            val location = estimateLineNumber(input, rule.pattern)
+            rule.finding.copy(filePath = input.filePath, lineNumber = location)
         }.toMutableList()
+
+        input.fuzzyMetrics.takeIf { it.duplicateMethodCount > 0 }?.let { fuzzy ->
+            logger.info("Detected fuzzy duplicate method bodies count=${fuzzy.duplicateMethodCount} for ${input.filePath}")
+            totalScore += 8
+            duplicationScore += 8
+            findings += Finding(
+                title = "Possible duplicated logic detected",
+                detail = "Detected ${fuzzy.duplicateMethodCount} similar method body pair(s) with highest similarity ${"%.0f".format(fuzzy.maxSimilarityScore * 100)}%.",
+                severity = Severity.MEDIUM,
+                category = Category.DUPLICATION,
+                filePath = input.filePath
+            )
+        }
 
         if (findings.isEmpty()) {
             findings += Finding(
@@ -54,7 +71,7 @@ class LocalMockAnalyzerClient : AnalyzerClient {
             "Use this score as triage guidance; prioritize HIGH severity findings first."
         )
 
-        return RiskResult(
+        val result = RiskResult(
             score = boundedScore,
             complexityScore = boundedComplexity,
             duplicationScore = boundedDuplication,
@@ -64,5 +81,34 @@ class LocalMockAnalyzerClient : AnalyzerClient {
             explanations = explanations,
             sourceFilePath = input.filePath
         )
+        logger.info("Computed RiskResult(score=${result.score}, findings=${result.findings.size}) for file=${input.filePath}")
+        return result
+    }
+
+    private fun estimateLineNumber(input: AnalysisInput, pattern: PatternConfig): Int? {
+        return when (pattern.type) {
+            "contains" -> pattern.value?.let { lineContaining(input.fileSnapshot, it) }
+            "regex" -> pattern.value?.let { lineMatching(input.fileSnapshot, it) }
+            "complex" -> pattern.conditions?.mapNotNull { condition -> estimateLineNumberForCondition(input, condition) }?.firstOrNull()
+            else -> null
+        }
+    }
+
+    private fun estimateLineNumberForCondition(input: AnalysisInput, condition: ConditionConfig): Int? {
+        return when (condition.type) {
+            "contains" -> (condition.value as? String)?.let { lineContaining(input.fileSnapshot, it) }
+            "regex" -> (condition.value as? String)?.let { lineMatching(input.fileSnapshot, it) }
+            else -> null
+        }
+    }
+
+    private fun lineContaining(text: String, search: String): Int? {
+        return text.lines().indexOfFirst { it.contains(search) }.takeIf { it >= 0 }?.plus(1)
+    }
+
+    private fun lineMatching(text: String, regexValue: String): Int? {
+        return Regex(regexValue).find(text)?.let { match ->
+            text.substring(0, match.range.first).count { it == '\n' } + 1
+        }
     }
 }

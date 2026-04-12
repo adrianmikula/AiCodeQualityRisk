@@ -13,7 +13,7 @@ repositories {
 }
 
 intellij {
-    version.set("2024.1")
+    version.set("2024.3")
     type.set("IC")
     plugins.set(emptyList())
     sandboxDir.set("/tmp/aicodequalityrisk-idea/sandbox")
@@ -21,6 +21,9 @@ intellij {
 
 dependencies {
     implementation("org.yaml:snakeyaml:2.0")
+    implementation("com.github.javaparser:javaparser-core:3.25.8")
+    implementation("io.github.bonede:tree-sitter:0.26.6")
+    implementation("io.github.bonede:tree-sitter-java:0.23.5")
     testImplementation(kotlin("test"))
 }
 
@@ -31,6 +34,9 @@ tasks {
 
     withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
         kotlinOptions.jvmTarget = "17"
+    }
+
+    runIde {
     }
 
     patchPluginXml {

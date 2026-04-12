@@ -253,10 +253,69 @@ This gives you:
 
 ---
 
-If you want next step, I can:
+# 🧩 Exact JavaParser extraction logic
 
-* design the **exact JavaParser extraction logic**
-* or show how to **combine AST + LLM into a single scoring pipeline**
-* or help you define **v1.1 roadmap that increases revenue fastest**
+For a lightweight Java AST integration, implement these steps:
+
+1. Parse changed Java files with JavaParser.
+2. Traverse the compilation unit and extract:
+   * method declarations
+   * class declarations
+   * field declarations
+   * call expressions
+3. Compute metrics per method:
+   * statement count
+   * nesting depth
+   * cyclomatic complexity estimate
+   * number of external calls
+4. Compute file-level signals:
+   * new / modified class count
+   * changed method count
+   * complexity delta vs existing baseline
+5. Emit a normalized risk score from these signals.
+
+## Use cases for AST-lite in v1.1
+
+* Flag methods that jump above a complexity threshold.
+* Identify newly added deeply nested code.
+* Detect methods with a high number of external dependencies.
+* Surface class-level structural changes that look risky.
+
+---
+
+# 🤖 Combining AST + LLM in one pipeline
+
+The cleanest architecture is a two-stage pipeline:
+
+1. Signal extraction
+   * diff heuristics
+   * AST metrics
+   * file metadata
+2. Interpretation layer
+   * LLM summarizes risk using the structured signals
+   * score is calibrated by AST evidence
+
+This keeps the plugin:
+
+* explainable: LLM text references AST facts
+* robust: AST metrics reduce guesswork
+* efficient: heuristics handle the simplest cases
+
+---
+
+# 🏗️ v1.1 roadmap (minimal, high-value)
+
+1. Add JavaParser AST extraction for changed `.java` files.
+2. Build a small metrics service that computes and stores:
+   * method complexity
+   * nesting depth
+   * changed symbol count
+3. Feed those metrics into the existing risk scoring engine.
+4. Update the LLM prompt to include AST evidence snippets.
+5. Ship a “Java AST risk upgrade” release, then measure user trust.
+
+---
+
+If you want, I can also add a short sample architecture diagram or a concrete JavaParser implementation sketch next.
 
 You’re actually very close to a *real monetisable dev tool here*—the key is resisting overengineering early.

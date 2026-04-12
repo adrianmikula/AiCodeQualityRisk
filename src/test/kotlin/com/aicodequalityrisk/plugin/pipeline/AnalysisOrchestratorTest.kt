@@ -22,7 +22,8 @@ class AnalysisOrchestratorTest {
                     filePath = "/tmp/Test.kt",
                     trigger = it,
                     diffText = "+val a = 1",
-                    fileSnapshot = "val a = 1"
+                    fileSnapshot = "val a = 1",
+                    astMetrics = com.aicodequalityrisk.plugin.analysis.ASTMetrics()
                 )
             },
             analyze = {
@@ -75,7 +76,8 @@ class AnalysisOrchestratorTest {
                     filePath = "/tmp/Test.kt",
                     trigger = it,
                     diffText = "+x",
-                    fileSnapshot = "x"
+                    fileSnapshot = "x",
+                    astMetrics = com.aicodequalityrisk.plugin.analysis.ASTMetrics()
                 )
             },
             analyze = { throw IllegalStateException("boom") },

@@ -1,0 +1,33 @@
+package com.aicodequalityrisk.plugin.analysis
+
+data class ASTMetrics(
+    val methodCount: Int = 0,
+    val maxMethodLength: Int = 0,
+    val averageMethodLength: Double = 0.0,
+    val maxNestingDepth: Int = 0,
+    val cyclomaticComplexity: Int = 0,
+    val classCount: Int = 0,
+    val fieldCount: Int = 0,
+    val maxParameterCount: Int = 0,
+    val stringLiteralCount: Int = 0,
+    val duplicateStringLiteralCount: Int = 0,
+    val duplicateNumberLiteralCount: Int = 0,
+    val hardcodedConfigLiteralCount: Int = 0,
+    val magicNumberCount: Int = 0,
+    val duplicateMethodCallCount: Int = 0,
+    val broadCatchCount: Int = 0,
+    val emptyCatchCount: Int = 0,
+    val booleanOperatorCount: Int = 0,
+    val maxElseIfChainLength: Int = 0,
+    val hasComplexMethods: Boolean = false,
+    val hasDeepNesting: Boolean = false,
+    val hasHighComplexity: Boolean = false,
+    val hasHardcodedConfig: Boolean = false,
+    val hasMagicNumbers: Boolean = false,
+    val hasLongParameterList: Boolean = false,
+    val hasBroadExceptionCatch: Boolean = false,
+    val hasEmptyCatchBlock: Boolean = false,
+    val hasRepeatedMethodCalls: Boolean = false,
+    val hasHeavyBooleanLogic: Boolean = false,
+    val hasLongIfElseChain: Boolean = false
+)

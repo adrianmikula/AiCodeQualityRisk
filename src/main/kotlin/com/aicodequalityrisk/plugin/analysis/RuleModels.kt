@@ -7,7 +7,8 @@ data class Rule(
     val matches: (AnalysisInput) -> Boolean,
     val scoreDelta: Int,
     val category: Category,
-    val finding: Finding
+    val finding: Finding,
+    val pattern: PatternConfig
 )
 
 enum class Category {

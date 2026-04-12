@@ -7,9 +7,9 @@ class RuleFactory {
     fun createRule(config: RuleConfig): Rule {
         val matchesFunction = createMatchesFunction(config.pattern)
         val category = parseCategory(config.category)
-        val finding = config.finding.toFinding()
+        val finding = config.finding.toFinding().copy(category = category)
 
-        return Rule(matchesFunction, config.scoreDelta, category, finding)
+        return Rule(matchesFunction, config.scoreDelta, category, finding, config.pattern)
     }
 
     private fun createMatchesFunction(pattern: PatternConfig): (AnalysisInput) -> Boolean {
@@ -76,6 +76,44 @@ class RuleFactory {
                     else -> throw IllegalArgumentException("Unknown length operator: $operator")
                 }
             }
+            "numeric" -> {
+                val target = condition.target
+                val operator = condition.operator ?: throw IllegalArgumentException("Numeric condition missing 'operator'")
+                val targetValue = getTargetValue(input, target)
+                val conditionValue = when (condition.value) {
+                    is Int -> condition.value.toDouble()
+                    is Double -> condition.value
+                    is String -> condition.value.toDoubleOrNull()
+                    else -> null
+                } ?: throw IllegalArgumentException("Numeric condition missing valid 'value'")
+
+                val numericValue = when (targetValue) {
+                    is Int -> targetValue.toDouble()
+                    is Double -> targetValue
+                    else -> throw IllegalArgumentException("Target $target is not numeric")
+                }
+
+                when (operator) {
+                    ">" -> numericValue > conditionValue
+                    "<" -> numericValue < conditionValue
+                    ">=" -> numericValue >= conditionValue
+                    "<=" -> numericValue <= conditionValue
+                    "==" -> numericValue == conditionValue
+                    "!=" -> numericValue != conditionValue
+                    else -> throw IllegalArgumentException("Unknown numeric operator: $operator")
+                }
+            }
+            "boolean" -> {
+                val target = condition.target
+                val targetValue = getTargetValue(input, target)
+                val expectedValue = condition.value as? Boolean
+                    ?: throw IllegalArgumentException("Boolean condition missing valid 'value'")
+
+                when (targetValue) {
+                    is Boolean -> targetValue == expectedValue
+                    else -> throw IllegalArgumentException("Target $target is not boolean")
+                }
+            }
             else -> throw IllegalArgumentException("Unknown condition type: ${condition.type}")
         }
     }
@@ -84,6 +122,43 @@ class RuleFactory {
         return when (target) {
             "diffText" -> input.diffText
             "fileSnapshot" -> input.fileSnapshot
+            else -> throw IllegalArgumentException("Unknown target: $target")
+        }
+    }
+
+    private fun getTargetValue(input: AnalysisInput, target: String): Any {
+        return when (target) {
+            "diffText" -> input.diffText
+            "fileSnapshot" -> input.fileSnapshot
+            "ast.methodCount" -> input.astMetrics.methodCount
+            "ast.maxMethodLength" -> input.astMetrics.maxMethodLength
+            "ast.averageMethodLength" -> input.astMetrics.averageMethodLength
+            "ast.maxNestingDepth" -> input.astMetrics.maxNestingDepth
+            "ast.cyclomaticComplexity" -> input.astMetrics.cyclomaticComplexity
+            "ast.classCount" -> input.astMetrics.classCount
+            "ast.fieldCount" -> input.astMetrics.fieldCount
+            "ast.maxParameterCount" -> input.astMetrics.maxParameterCount
+            "ast.stringLiteralCount" -> input.astMetrics.stringLiteralCount
+            "ast.duplicateStringLiteralCount" -> input.astMetrics.duplicateStringLiteralCount
+            "ast.hardcodedConfigLiteralCount" -> input.astMetrics.hardcodedConfigLiteralCount
+            "ast.magicNumberCount" -> input.astMetrics.magicNumberCount
+            "ast.hasComplexMethods" -> input.astMetrics.hasComplexMethods
+            "ast.hasDeepNesting" -> input.astMetrics.hasDeepNesting
+            "ast.hasHighComplexity" -> input.astMetrics.hasHighComplexity
+            "ast.hasHardcodedConfig" -> input.astMetrics.hasHardcodedConfig
+            "ast.hasMagicNumbers" -> input.astMetrics.hasMagicNumbers
+            "ast.hasLongParameterList" -> input.astMetrics.hasLongParameterList
+            "ast.duplicateNumberLiteralCount" -> input.astMetrics.duplicateNumberLiteralCount
+            "ast.duplicateMethodCallCount" -> input.astMetrics.duplicateMethodCallCount
+            "ast.broadCatchCount" -> input.astMetrics.broadCatchCount
+            "ast.emptyCatchCount" -> input.astMetrics.emptyCatchCount
+            "ast.booleanOperatorCount" -> input.astMetrics.booleanOperatorCount
+            "ast.maxElseIfChainLength" -> input.astMetrics.maxElseIfChainLength
+            "ast.hasBroadExceptionCatch" -> input.astMetrics.hasBroadExceptionCatch
+            "ast.hasEmptyCatchBlock" -> input.astMetrics.hasEmptyCatchBlock
+            "ast.hasRepeatedMethodCalls" -> input.astMetrics.hasRepeatedMethodCalls
+            "ast.hasHeavyBooleanLogic" -> input.astMetrics.hasHeavyBooleanLogic
+            "ast.hasLongIfElseChain" -> input.astMetrics.hasLongIfElseChain
             else -> throw IllegalArgumentException("Unknown target: $target")
         }
     }
