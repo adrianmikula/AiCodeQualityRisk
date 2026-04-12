@@ -96,7 +96,6 @@
 
     <!-- IntelliJ Platform Version Requirements -->
     <depends>com.intellij.modules.platform</depends>
-    <depends>com.intellij.modules.java</depends>
 
     <!-- Extensions for Plugin Functionality -->
     <extensions defaultExtensionNs="com.intellij">
@@ -117,11 +116,7 @@
                 canCloseContent="false"/>
 
         <!-- Editor Integration -->
-        <editorLinePainter implementation="com.aicodequalityrisk.plugin.editor.InlineRiskLinePainter"/>
-
-        <!-- License Check on Plugin Startup -->
-        <!-- Ensures license status is checked and UI updated when plugin first loads -->
-        <postStartupActivity implementation="com.aicodequalityrisk.plugin.startup.LicenseCheckStartupActivity"/>
+        <linePainter implementation="com.aicodequalityrisk.plugin.editor.InlineRiskLinePainter"/>
     </extensions>
 
     <actions>

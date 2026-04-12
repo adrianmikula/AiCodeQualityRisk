@@ -30,8 +30,9 @@ class TreeSitterFuzzyDetector {
 
     private fun isSupported(filePath: String?): Boolean {
         val extension = filePath?.substringAfterLast('.', missingDelimiterValue = "")?.lowercase()
-        return extension == "java"
+        return extension == "java" || extension == "kt"
     }
+
 
     private fun analyzeTree(root: TSNode, source: String): FuzzyMetrics {
         val methods = collectMethodNodes(root)
