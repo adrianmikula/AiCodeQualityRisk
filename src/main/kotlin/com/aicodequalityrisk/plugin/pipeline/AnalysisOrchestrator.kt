@@ -6,6 +6,7 @@ import com.aicodequalityrisk.plugin.model.AnalysisInput
 import com.aicodequalityrisk.plugin.model.AnalysisViewState
 import com.aicodequalityrisk.plugin.model.RiskResult
 import com.aicodequalityrisk.plugin.model.TriggerType
+import com.aicodequalityrisk.plugin.service.LicenseService
 import com.aicodequalityrisk.plugin.state.AnalysisStateStore
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.diagnostic.Logger
@@ -18,7 +19,8 @@ class AnalysisOrchestrator private constructor(
     private val captureFn: (TriggerType) -> AnalysisInput?,
     private val analyzeFn: (AnalysisInput) -> RiskResult,
     private val updateFn: (AnalysisViewState) -> Unit,
-    private val runnerRef: TaskRunner
+    private val runnerRef: TaskRunner,
+    private val licenseCheck: () -> Boolean
 ) : Disposable {
 
     private val logger = Logger.getInstance(AnalysisOrchestrator::class.java)
@@ -26,28 +28,41 @@ class AnalysisOrchestrator private constructor(
         captureFn = { trigger -> project.service<DiffCaptureService>().captureCurrentContext(project, trigger) },
         analyzeFn = { input -> project.service<LocalMockAnalyzerClient>().analyze(input) },
         updateFn = { state -> project.service<AnalysisStateStore>().update(state) },
-        runnerRef = LatestOnlyRunner()
+        runnerRef = LatestOnlyRunner(),
+        licenseCheck = { project.service<LicenseService>().isTrialExpired() }
     )
 
     fun trigger(triggerType: TriggerType) {
         logger.info("Analysis trigger received: $triggerType")
+        if (licenseCheck()) {
+            logger.info("Analysis blocked: trial expired")
+            updateFn(AnalysisViewState.Error("Trial expired. Please upgrade to continue using the plugin."))
+            return
+        }
+        logger.info("Analysis proceeding - license check passed")
         runnerRef.submit {
             updateFn(AnalysisViewState.Loading)
+            logger.info("Analysis state set to Loading")
             try {
                 val input = captureFn(triggerType)
                 if (input == null) {
                     logger.debug("No analysis input available for trigger=$triggerType")
                     updateFn(AnalysisViewState.Idle)
+                    logger.info("Analysis state set to Idle (no input)")
                     return@submit
                 }
+                logger.info("Calling analyze function for file=${input.filePath}")
                 val result = analyzeFn(input)
+                logger.info("Analysis complete: score=${result.score}, complexity=${result.complexityScore}")
                 logger.info("Analysis ready for file=${input.filePath} score=${result.score}")
                 updateFn(AnalysisViewState.Ready(result))
+                logger.info("Analysis state set to Ready")
             } catch (interrupted: InterruptedException) {
                 Thread.currentThread().interrupt()
             } catch (e: Exception) {
                 logger.warn("Analysis failed for trigger=$triggerType", e)
                 updateFn(AnalysisViewState.Error(e.message ?: "Analysis failed"))
+                logger.info("Analysis state set to Error: ${e.message}")
             }
         }
     }
@@ -61,7 +76,11 @@ class AnalysisOrchestrator private constructor(
             capture: (TriggerType) -> AnalysisInput?,
             analyze: (AnalysisInput) -> RiskResult,
             updateState: (AnalysisViewState) -> Unit,
-            runner: TaskRunner
-        ): AnalysisOrchestrator = AnalysisOrchestrator(capture, analyze, updateState, runner)
+            runner: TaskRunner,
+            isTrialExpired: Boolean = false
+        ): AnalysisOrchestrator = AnalysisOrchestrator(
+            capture, analyze, updateState, runner,
+            { isTrialExpired }
+        )
     }
 }
