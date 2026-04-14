@@ -6,12 +6,14 @@ import com.intellij.openapi.diagnostic.Logger
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration
 import com.github.javaparser.ast.body.FieldDeclaration
 import com.github.javaparser.ast.body.MethodDeclaration
+import com.github.javaparser.ast.body.TypeDeclaration
 import com.github.javaparser.ast.expr.BinaryExpr
 import com.github.javaparser.ast.expr.DoubleLiteralExpr
 import com.github.javaparser.ast.expr.IntegerLiteralExpr
 import com.github.javaparser.ast.expr.LongLiteralExpr
 import com.github.javaparser.ast.expr.MethodCallExpr
 import com.github.javaparser.ast.expr.StringLiteralExpr
+import com.github.javaparser.ast.expr.NameExpr
 import com.github.javaparser.ast.stmt.*
 
 class ASTAnalyzer {
@@ -97,6 +99,16 @@ class ASTAnalyzer {
         val maxParameterCount = methods.maxOfOrNull { it.parameters.size } ?: 0
         val fieldCount = fields.sumOf { it.variables.size }
 
+        val originalCode = cu.toString()
+        val commentCount = countComments(originalCode)
+        val hasGenericMethodNames = hasGenericMethodNames(methods)
+        val hasManagerHandlerClasses = hasManagerHandlerClasses(classes)
+
+        val sqlStringConcatCount = countSqlStringConcat(cu)
+        val stringEqualsCount = countStringEquals(cu)
+        val deprecatedApiUsageCount = countDeprecatedApiUsage(cu)
+        val loggingInLoopCount = countLoggingInLoop(cu)
+
         return ASTMetrics(
             methodCount = methods.size,
             maxMethodLength = maxMethodLength,
@@ -116,6 +128,10 @@ class ASTAnalyzer {
             emptyCatchCount = emptyCatchCount,
             booleanOperatorCount = booleanOperatorCount,
             maxElseIfChainLength = maxElseIfChainLength,
+            commentCount = commentCount,
+            hasExcessiveComments = commentCount > 5,
+            hasGenericMethodNames = hasGenericMethodNames,
+            hasManagerHandlerClasses = hasManagerHandlerClasses,
             hasComplexMethods = maxMethodLength > 50,
             hasDeepNesting = maxNestingDepth > 3,
             hasHighComplexity = totalComplexity > 10,
@@ -126,7 +142,11 @@ class ASTAnalyzer {
             hasEmptyCatchBlock = emptyCatchCount > 0,
             hasRepeatedMethodCalls = duplicateMethodCallCount > 0,
             hasHeavyBooleanLogic = booleanOperatorCount > 3,
-            hasLongIfElseChain = maxElseIfChainLength > 2
+            hasLongIfElseChain = maxElseIfChainLength > 2,
+            sqlStringConcatCount = sqlStringConcatCount,
+            stringEqualsCount = stringEqualsCount,
+            deprecatedApiUsageCount = deprecatedApiUsageCount,
+            loggingInLoopCount = loggingInLoopCount
         )
     }
 
@@ -136,29 +156,35 @@ class ASTAnalyzer {
         } ?: 0
     }
 
-    private fun calculateNestingDepth(statement: Statement?): Int {
-        if (statement == null) return 0
+    private fun calculateNestingDepth(statement: Statement?, currentDepth: Int = 0): Int {
+        if (statement == null) return currentDepth
 
         return when (statement) {
             is BlockStmt -> {
-                val childDepths = statement.statements.map { calculateNestingDepth(it) }
-                childDepths.maxOrNull()?.plus(1) ?: 1
+                statement.statements.maxOfOrNull { calculateNestingDepth(it, currentDepth) } 
+                    ?: currentDepth
             }
             is IfStmt -> {
-                val thenDepth = calculateNestingDepth(statement.thenStmt)
-                val elseDepth = statement.elseStmt.map { calculateNestingDepth(it) }.orElse(0)
-                maxOf(thenDepth, elseDepth) + 1
+                val thenDepth = calculateNestingDepth(statement.thenStmt, currentDepth + 1)
+                val elseDepth = statement.elseStmt.map { calculateNestingDepth(it, currentDepth + 1) }.orElse(currentDepth)
+                maxOf(thenDepth, elseDepth)
             }
-            is ForStmt, is WhileStmt, is DoStmt -> {
-                calculateNestingDepth(statement.toBlock()?.statements?.firstOrNull()) + 1
+            is ForStmt -> {
+                calculateNestingDepth(statement.body, currentDepth + 1)
+            }
+            is WhileStmt -> {
+                calculateNestingDepth(statement.body, currentDepth + 1)
+            }
+            is DoStmt -> {
+                calculateNestingDepth(statement.body, currentDepth + 1)
             }
             is SwitchStmt -> {
-                val caseDepths = statement.entries.map { entry ->
-                    entry.statements.map { calculateNestingDepth(it) }.maxOrNull() ?: 0
-                }
-                (caseDepths.maxOrNull() ?: 0) + 1
+                statement.entries.maxOfOrNull { entry ->
+                    entry.statements.maxOfOrNull { calculateNestingDepth(it, currentDepth + 1) } 
+                        ?: currentDepth + 1
+                } ?: currentDepth
             }
-            else -> 1
+            else -> currentDepth + 1
         }
     }
 
@@ -192,6 +218,56 @@ class ASTAnalyzer {
         return length
     }
 
+    private fun countComments(code: String): Int {
+        var count = 0
+        var i = 0
+        while (i < code.length) {
+            if (code[i] == '/' && i + 1 < code.length) {
+                if (code[i + 1] == '/') {
+                    count++
+                    i += 2
+                    while (i < code.length && code[i] != '\n') i++
+                    continue
+                } else if (code[i + 1] == '*') {
+                    count++
+                    i += 2
+                    while (i + 1 < code.length && !(code[i] == '*' && code[i + 1] == '/')) {
+                        i++
+                    }
+                    i += 2
+                    continue
+                }
+            }
+            i++
+        }
+        return count
+    }
+
+    private fun hasGenericMethodNames(methods: List<MethodDeclaration>): Boolean {
+        val genericPatterns = listOf(
+            "process", "handle", "doIt", "execute", "run",
+            "data", "info", "result", "value", "item",
+            "temp", "tmp", "flag", "check", "validate"
+        )
+        return methods.any { method ->
+            val name = method.nameAsString.lowercase()
+            genericPatterns.any { pattern ->
+                name == pattern || name.startsWith(pattern) || name.endsWith(pattern)
+            }
+        }
+    }
+
+    private fun hasManagerHandlerClasses(classes: List<ClassOrInterfaceDeclaration>): Boolean {
+        return classes.any { cls ->
+            val name = cls.nameAsString
+            name.endsWith("Manager", ignoreCase = true) ||
+                    name.endsWith("Handler", ignoreCase = true) ||
+                    name.endsWith("Helper", ignoreCase = true) ||
+                    name.endsWith("Util", ignoreCase = true) ||
+                    name.endsWith("Service", ignoreCase = true)
+        }
+    }
+
     private fun Statement.toBlock(): BlockStmt? {
         return this as? BlockStmt
     }
@@ -205,5 +281,120 @@ class ASTAnalyzer {
         val cleaned = value.removeSuffix("L").removeSuffix("l")
         val number = cleaned.toDoubleOrNull() ?: return false
         return number != 0.0 && number != 1.0 && number != -1.0
+    }
+
+    private fun countSqlStringConcat(cu: CompilationUnit): Int {
+        val binaryExprs = cu.findAll(BinaryExpr::class.java)
+        val sqlKeywords = listOf("SELECT", "INSERT", "UPDATE", "DELETE", "WHERE", "FROM", "JOIN", "ON", "AND", "OR", "ORDER BY", "GROUP BY", "HAVING")
+        var count = 0
+        
+        for (expr in binaryExprs) {
+            if (expr.operator == BinaryExpr.Operator.PLUS) {
+                val left = expr.left.toString().uppercase()
+                val right = expr.right.toString().uppercase()
+                if (sqlKeywords.any { left.contains(it) || right.contains(it) }) {
+                    count++
+                }
+            }
+        }
+        return count
+    }
+
+    private fun countStringEquals(cu: CompilationUnit): Int {
+        val binaryExprs = cu.findAll(BinaryExpr::class.java)
+        var count = 0
+        val stringVarNames = mutableSetOf<String>()
+        
+        for (method in cu.findAll(MethodDeclaration::class.java)) {
+            method.parameters.filter { it.type.asString() == "String" }.forEach { 
+                stringVarNames.add(it.nameAsString) 
+            }
+        }
+        
+        for (expr in binaryExprs) {
+            if (expr.operator == BinaryExpr.Operator.EQUALS || expr.operator == BinaryExpr.Operator.NOT_EQUALS) {
+                val left = expr.left.toString()
+                val right = expr.right.toString()
+                if (left in stringVarNames || right in stringVarNames || left == "null" || right == "null") {
+                    count++
+                }
+            }
+        }
+        return count
+    }
+
+    private fun countDeprecatedApiUsage(cu: CompilationUnit): Int {
+        var count = 0
+        val typeDeclarations = cu.findAll(TypeDeclaration::class.java)
+        
+        for (typeDecl in typeDeclarations) {
+            for (member in typeDecl.members) {
+                val code = member.toString()
+                if (code.contains("java.util.Date") || code.contains("java.util.Vector") || code.contains("java.util.Hashtable") ||
+                    code.contains("java.sql.Date") || code.contains("new Date()") || code.contains("new Vector()") || code.contains("new Hashtable()")) {
+                    count++
+                }
+                if (member is FieldDeclaration) {
+                    for (varDecl in member.variables) {
+                        val typeStr = varDecl.type.toString()
+                        if (typeStr == "Date" || typeStr == "Vector" || typeStr == "Hashtable" ||
+                            typeStr == "java.util.Date" || typeStr == "java.util.Vector" || typeStr == "java.util.Hashtable") {
+                            count++
+                        }
+                    }
+                }
+                if (member is MethodDeclaration) {
+                    for (param in member.parameters) {
+                        val paramType = param.type.toString()
+                        if (paramType == "Date" || paramType == "Vector" || paramType == "Hashtable" ||
+                            paramType == "java.util.Date" || paramType == "java.util.Vector" || paramType == "java.util.Hashtable") {
+                            count++
+                        }
+                    }
+                }
+            }
+        }
+        
+        for (method in cu.findAll(MethodDeclaration::class.java)) {
+            for (param in method.parameters) {
+                val paramType = param.type.toString()
+                if (paramType == "Date" || paramType == "Vector" || paramType == "Hashtable" ||
+                    paramType == "java.util.Date" || paramType == "java.util.Vector" || paramType == "java.util.Hashtable") {
+                    count++
+                }
+            }
+            method.body.ifPresent { body ->
+                val methodCode = body.toString()
+                if (methodCode.contains("new Date()") || methodCode.contains("new Vector()") || methodCode.contains("new Hashtable()")) {
+                    count++
+                }
+            }
+        }
+        
+        return count
+    }
+
+    private fun countLoggingInLoop(cu: CompilationUnit): Int {
+        val forStmts = cu.findAll(ForStmt::class.java)
+        val whileStmts = cu.findAll(WhileStmt::class.java)
+        var count = 0
+        
+        for (forStmt in forStmts) {
+            val bodyCode = forStmt.body.toString()
+            if (bodyCode.contains("System.out.println") || bodyCode.contains("logger.") || 
+                bodyCode.contains("Log.") || bodyCode.contains("log.")) {
+                count++
+            }
+        }
+        
+        for (whileStmt in whileStmts) {
+            val bodyCode = whileStmt.body.toString()
+            if (bodyCode.contains("System.out.println") || bodyCode.contains("logger.") || 
+                bodyCode.contains("Log.") || bodyCode.contains("log.")) {
+                count++
+            }
+        }
+        
+        return count
     }
 }
