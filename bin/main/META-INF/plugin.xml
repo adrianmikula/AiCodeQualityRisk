@@ -64,7 +64,7 @@
 
     <h3>Supported Technologies</h3>
     <ul>
-    <li><b>Languages:</b> Java (full AST analysis), Kotlin, Python, JavaScript, TypeScript, and more (diff-based analysis)</li>
+    <li><b>Languages:</b> Java, Kotlin, Python, JavaScript, TypeScript, and more</li>
     <li><b>Frameworks:</b> Spring, React, Angular, Vue.js, Django, Flask</li>
     <li><b>Build Tools:</b> Maven, Gradle, npm, yarn, pip</li>
     <li><b>IDE Integration:</b> IntelliJ IDEA 2023.3+ (Community & Ultimate)</li>

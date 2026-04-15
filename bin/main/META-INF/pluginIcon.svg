@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40">
+  <!-- Jakarta EE Transition Icon - Isometric cube design -->
+  <!-- Colors: Dark #042840, Teal #027098, Orange #EE4701 -->
+  
+  <!-- Cube top face -->
+  <polygon points="20,4 36,12 20,20 4,12" fill="#027098" />
+  
+  <!-- Cube left face - orange transition -->
+  <polygon points="4,12 20,20 20,34 4,26" fill="#EE4701" />
+  
+  <!-- Cube right face -->
+  <polygon points="36,12 20,20 20,34 36,26" fill="#042840" />
+  
+  <!-- Highlight on top -->
+  <polygon points="20,4 30,9 20,14 10,9" fill="#0482A8" />
+</svg>

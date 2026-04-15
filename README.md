@@ -2,6 +2,11 @@
 
 This repository contains a Kotlin-based IntelliJ plugin MVP that analyzes in-progress code changes and shows a risk score with findings and explanations.
 
+## Language Support
+
+- **Java**: Full AST-based analysis with detailed metrics (cyclomatic complexity, nesting depth, method lengths, etc.)
+- **Other Languages**: Diff-based pattern analysis (security issues, code smells, etc.)
+
 ## Implemented v1 Features
 
 - Diff/change capture with staged Git diff preference and fallback behavior

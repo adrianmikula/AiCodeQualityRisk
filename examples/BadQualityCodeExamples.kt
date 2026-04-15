@@ -23,6 +23,7 @@ class BadQualityCodeExamples {
 
 
 
+    
 
 
     // CATEGORY: MAGIC NUMBERS - Hardcoded numeric literals without explanation
