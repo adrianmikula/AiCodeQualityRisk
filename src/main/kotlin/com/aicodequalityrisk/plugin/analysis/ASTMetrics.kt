@@ -19,6 +19,9 @@ data class ASTMetrics(
     val emptyCatchCount: Int = 0,
     val booleanOperatorCount: Int = 0,
     val maxElseIfChainLength: Int = 0,
+    val lineCommentCount: Int = 0,
+    val blockCommentCount: Int = 0,
+    val javadocCommentCount: Int = 0,
     val hasComplexMethods: Boolean = false,
     val hasDeepNesting: Boolean = false,
     val hasHighComplexity: Boolean = false,
@@ -29,5 +32,7 @@ data class ASTMetrics(
     val hasEmptyCatchBlock: Boolean = false,
     val hasRepeatedMethodCalls: Boolean = false,
     val hasHeavyBooleanLogic: Boolean = false,
-    val hasLongIfElseChain: Boolean = false
+    val hasLongIfElseChain: Boolean = false,
+    val hasExcessiveComments: Boolean = false,
+    val hasVerboseComments: Boolean = false
 )

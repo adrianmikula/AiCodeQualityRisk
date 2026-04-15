@@ -60,21 +60,22 @@ class LocalMockAnalyzerClient : AnalyzerClient {
             totalScore += 5
         }
 
+        val ast = input.astMetrics
         val boundedScore = totalScore.coerceIn(0, 100)
         val boundedComplexity = complexityScore.coerceIn(0, 100)
         val boundedDuplication = duplicationScore.coerceIn(0, 100)
         val boundedPerformance = performanceScore.coerceIn(0, 100)
         val boundedSecurity = securityScore.coerceIn(0, 100)
-        val boundedBoilerplateBloat = 0
-        val boundedVerboseCommentSpam = 0
-        val boundedOverDefensive = 0
-        val boundedMagicNumbers = 0
-        val boundedComplexBoolean = 0
-        val boundedDeepNesting = 0
-        val boundedVerboseLogging = 0
-        val boundedPoorNaming = 0
-        val boundedFrameworkMisuse = 0
-        val boundedExcessiveDocs = 0
+        val boundedBoilerplateBloat = calculateBoilerplateBloatScore(ast)
+        val boundedVerboseCommentSpam = calculateVerboseCommentSpamScore(ast)
+        val boundedOverDefensive = calculateOverDefensiveScore(ast)
+        val boundedMagicNumbers = calculateMagicNumbersScore(ast)
+        val boundedComplexBoolean = calculateComplexBooleanScore(ast)
+        val boundedDeepNesting = calculateDeepNestingScore(ast)
+        val boundedVerboseLogging = calculateVerboseLoggingScore(ast)
+        val boundedPoorNaming = calculatePoorNamingScore(ast)
+        val boundedFrameworkMisuse = calculateFrameworkMisuseScore(ast)
+        val boundedExcessiveDocs = calculateExcessiveDocumentationScore(ast)
 
         val explanations = listOf(
             "Risk score combines lightweight syntax heuristics and diff footprint signals.",
@@ -130,5 +131,80 @@ class LocalMockAnalyzerClient : AnalyzerClient {
         return Regex(regexValue).find(text)?.let { match ->
             text.substring(0, match.range.first).count { it == '\n' } + 1
         }
+    }
+
+    private fun calculateBoilerplateBloatScore(ast: ASTMetrics): Int {
+        var score = 0
+        if (ast.averageMethodLength > 50) score += ((ast.averageMethodLength - 50) / 10).toInt().coerceAtMost(10)
+        if (ast.maxMethodLength > 100) score += ((ast.maxMethodLength - 100) / 20).toInt().coerceAtMost(10)
+        if (ast.duplicateStringLiteralCount > 3) score += (ast.duplicateStringLiteralCount - 3).coerceAtMost(10)
+        return score.coerceIn(0, 100)
+    }
+
+    private fun calculateVerboseCommentSpamScore(ast: ASTMetrics): Int {
+        var score = 0
+        if (ast.hasVerboseComments) score += 20
+        if (ast.lineCommentCount > 20) score += ((ast.lineCommentCount - 20) / 5).toInt().coerceAtMost(15)
+        if (ast.blockCommentCount > 10) score += ((ast.blockCommentCount - 10) / 3).toInt().coerceAtMost(15)
+        return score.coerceIn(0, 100)
+    }
+
+    private fun calculateOverDefensiveScore(ast: ASTMetrics): Int {
+        var score = 0
+        if (ast.hasRepeatedMethodCalls) score += 15
+        if (ast.duplicateMethodCallCount > 2) score += (ast.duplicateMethodCallCount - 2) * 5
+        return score.coerceIn(0, 100)
+    }
+
+    private fun calculateMagicNumbersScore(ast: ASTMetrics): Int {
+        var score = 0
+        if (ast.magicNumberCount > 0) score += ast.magicNumberCount * 8
+        if (ast.hasMagicNumbers) score += 10
+        return score.coerceIn(0, 100)
+    }
+
+    private fun calculateComplexBooleanScore(ast: ASTMetrics): Int {
+        var score = 0
+        if (ast.booleanOperatorCount > 5) score += (ast.booleanOperatorCount - 5) * 4
+        if (ast.hasHeavyBooleanLogic) score += 15
+        if (ast.maxElseIfChainLength > 2) score += (ast.maxElseIfChainLength - 2) * 8
+        return score.coerceIn(0, 100)
+    }
+
+    private fun calculateDeepNestingScore(ast: ASTMetrics): Int {
+        var score = 0
+        if (ast.maxNestingDepth > 3) score += (ast.maxNestingDepth - 3) * 10
+        if (ast.hasDeepNesting) score += 15
+        return score.coerceIn(0, 100)
+    }
+
+    private fun calculateVerboseLoggingScore(ast: ASTMetrics): Int {
+        var score = 0
+        if (ast.stringLiteralCount > 10) score += ((ast.stringLiteralCount - 10) / 5).toInt().coerceAtMost(15)
+        return score.coerceIn(0, 100)
+    }
+
+    private fun calculatePoorNamingScore(ast: ASTMetrics): Int {
+        var score = 0
+        if (ast.hasHardcodedConfig) score += 20
+        if (ast.hardcodedConfigLiteralCount > 2) score += (ast.hardcodedConfigLiteralCount - 2) * 5
+        return score.coerceIn(0, 100)
+    }
+
+    private fun calculateFrameworkMisuseScore(ast: ASTMetrics): Int {
+        var score = 0
+        if (ast.hasBroadExceptionCatch) score += 20
+        if (ast.broadCatchCount > 1) score += (ast.broadCatchCount - 1) * 10
+        if (ast.hasEmptyCatchBlock) score += 15
+        if (ast.emptyCatchCount > 0) score += ast.emptyCatchCount * 5
+        return score.coerceIn(0, 100)
+    }
+
+    private fun calculateExcessiveDocumentationScore(ast: ASTMetrics): Int {
+        var score = 0
+        if (ast.hasExcessiveComments) score += 25
+        if (ast.javadocCommentCount > 5) score += ((ast.javadocCommentCount - 5) * 3).coerceAtMost(20)
+        if (ast.javadocCommentCount > ast.methodCount && ast.methodCount > 0) score += 15
+        return score.coerceIn(0, 100)
     }
 }

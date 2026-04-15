@@ -6,6 +6,9 @@ import com.intellij.openapi.diagnostic.Logger
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration
 import com.github.javaparser.ast.body.FieldDeclaration
 import com.github.javaparser.ast.body.MethodDeclaration
+import com.github.javaparser.ast.comments.BlockComment
+import com.github.javaparser.ast.comments.JavadocComment
+import com.github.javaparser.ast.comments.LineComment
 import com.github.javaparser.ast.expr.BinaryExpr
 import com.github.javaparser.ast.expr.DoubleLiteralExpr
 import com.github.javaparser.ast.expr.IntegerLiteralExpr
@@ -90,6 +93,13 @@ class ASTAnalyzer {
             }.orElse(0)
         } ?: 0
 
+        val lineCommentCount = cu.findAll(LineComment::class.java).size
+        val blockCommentCount = cu.findAll(BlockComment::class.java).size
+        val javadocCommentCount = cu.findAll(JavadocComment::class.java).size
+        val totalCommentCount = lineCommentCount + blockCommentCount + javadocCommentCount
+        val codeLineCount = cu.toString().lines().count { it.isNotBlank() }
+        val commentToCodeRatio = if (codeLineCount > 0) totalCommentCount.toDouble() / codeLineCount else 0.0
+
         val maxMethodLength = methodLengths.maxOrNull() ?: 0
         val averageMethodLength = if (methodLengths.isNotEmpty()) methodLengths.average() else 0.0
         val maxNestingDepth = nestingDepths.maxOrNull() ?: 0
@@ -116,6 +126,9 @@ class ASTAnalyzer {
             emptyCatchCount = emptyCatchCount,
             booleanOperatorCount = booleanOperatorCount,
             maxElseIfChainLength = maxElseIfChainLength,
+            lineCommentCount = lineCommentCount,
+            blockCommentCount = blockCommentCount,
+            javadocCommentCount = javadocCommentCount,
             hasComplexMethods = maxMethodLength > 50,
             hasDeepNesting = maxNestingDepth > 3,
             hasHighComplexity = totalComplexity > 10,
@@ -126,7 +139,9 @@ class ASTAnalyzer {
             hasEmptyCatchBlock = emptyCatchCount > 0,
             hasRepeatedMethodCalls = duplicateMethodCallCount > 0,
             hasHeavyBooleanLogic = booleanOperatorCount > 3,
-            hasLongIfElseChain = maxElseIfChainLength > 2
+            hasLongIfElseChain = maxElseIfChainLength > 2,
+            hasExcessiveComments = commentToCodeRatio > 0.3,
+            hasVerboseComments = lineCommentCount > 10 || blockCommentCount > 5
         )
     }
 
