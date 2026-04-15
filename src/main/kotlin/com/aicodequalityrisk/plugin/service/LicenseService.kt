@@ -7,33 +7,57 @@ import com.intellij.openapi.extensions.PluginId
 import com.intellij.openapi.project.Project
 
 @Service(Service.Level.PROJECT)
-open class LicenseService(project: Project) {
+open class LicenseService {
 
-    private val projectRef = project
+    private var trialStartTime: Long = 0L
+    private var trialEndTime: Long = 0L
 
-    private var trialPreviouslyActive = false
+    constructor()
+
+    constructor(trialStartTime: Long, trialEndTime: Long) {
+        this.trialStartTime = trialStartTime
+        this.trialEndTime = trialEndTime
+    }
+
+    constructor(project: Project) {
+
+    }
+
+    fun startTrial() {
+        val trialDurationMillis = 14L * 24 * 60 * 60 * 1000 // 14 days
+        trialStartTime = System.currentTimeMillis()
+        trialEndTime = trialStartTime + trialDurationMillis
+    }
 
     fun getLicenseStatus(): LicenseStatus {
         return try {
-            fallbackLicenseCheck()
+            checkTrialStatus()
         } catch (e: Throwable) {
-            LicenseStatus.UNLICENSED
+            getLicenseStatusWithoutPluginCheck()
         }
     }
 
-    private fun fallbackLicenseCheck(): LicenseStatus {
-        return try {
-            val pluginId = "PAICODEQUALITY"
-            val pluginManager = com.intellij.ide.plugins.PluginManager.getInstance()
-            val plugin = pluginManager.findEnabledPlugin(PluginId.getId(pluginId))
-            if (plugin != null && !plugin.isBundled) {
-                LicenseStatus.LICENSED
+    private fun getLicenseStatusWithoutPluginCheck(): LicenseStatus {
+        if (trialStartTime > 0) {
+            val now = System.currentTimeMillis()
+            if (now < trialEndTime) {
+                return LicenseStatus.TRIAL
             } else {
-                LicenseStatus.UNLICENSED
+                return LicenseStatus.TRIAL_EXPIRED
             }
-        } catch (e: Throwable) {
-            LicenseStatus.UNLICENSED
         }
+        return LicenseStatus.UNLICENSED
+    }
+
+    private fun checkTrialStatus(): LicenseStatus {
+        val pluginId = "PAICODEQUALITY"
+        val pluginManager = com.intellij.ide.plugins.PluginManager.getInstance()
+        val plugin = pluginManager.findEnabledPlugin(PluginId.getId(pluginId))
+        if (plugin != null && !plugin.isBundled) {
+            return LicenseStatus.LICENSED
+        }
+
+        return getLicenseStatusWithoutPluginCheck()
     }
 
     fun isPremium(): Boolean {
@@ -46,6 +70,11 @@ open class LicenseService(project: Project) {
     fun isInTrial(): Boolean = getLicenseStatus() == LicenseStatus.TRIAL
 
     fun isUnlicensed(): Boolean = getLicenseStatus() == LicenseStatus.UNLICENSED
+
+    fun isLocked(): Boolean {
+        val status = getLicenseStatus()
+        return status == LicenseStatus.UNLICENSED || status == LicenseStatus.TRIAL_EXPIRED
+    }
 
     fun getUpgradeUrl(): String = "https://plugins.jetbrains.com/plugin/31227-ai-code-quality-risk"
 
