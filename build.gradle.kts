@@ -40,8 +40,8 @@ tasks {
     }
 
     patchPluginXml {
-        sinceBuild.set("241")
-        untilBuild.set("251.*")
+        sinceBuild.set(providers.gradleProperty("intellij.sinceBuild").orElse("233"))
+        untilBuild.set(providers.gradleProperty("intellij.untilBuild").orElse(""))
     }
 
     test {

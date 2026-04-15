@@ -31,7 +31,7 @@
 
     <name>AI Code Quality Risk</name>
     <id>com.aicodequalityrisk.plugin</id>
-    <vendor email="support@aicodequalityrisk.com" name="AI Code Quality Risk Team" url="https://github.com/aicodequalityrisk/plugin">AI Code Quality Risk</vendor>
+    <vendor email="adrian.m@tuta.io" name="Adrian M" url="https://github.com/adrianmikula/AiCodeQualityRisk">AI Code Quality Risk</vendor>
     <category>Code Analysis</category>
 
 
