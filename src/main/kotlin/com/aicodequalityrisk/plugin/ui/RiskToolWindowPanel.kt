@@ -1,6 +1,5 @@
 package com.aicodequalityrisk.plugin.ui
 
-import com.aicodequalityrisk.plugin.analysis.Category
 import com.aicodequalityrisk.plugin.model.AnalysisViewState
 import com.aicodequalityrisk.plugin.model.Finding
 import com.aicodequalityrisk.plugin.model.LicenseStatus
@@ -15,11 +14,8 @@ import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.ide.BrowserUtil
 import java.awt.BorderLayout
 import java.awt.Color
-import java.awt.Cursor
 import java.awt.Dimension
 import java.awt.Font
-import java.awt.event.MouseAdapter
-import java.awt.event.MouseEvent
 import javax.swing.BoxLayout
 import javax.swing.DefaultListModel
 import javax.swing.JButton
@@ -27,7 +23,6 @@ import javax.swing.JLabel
 import javax.swing.JList
 import javax.swing.JPanel
 import javax.swing.JScrollPane
-import javax.swing.JTextArea
 
 class RiskToolWindowPanel(private val project: Project) : JPanel(BorderLayout()) {
     private val logger = Logger.getInstance(RiskToolWindowPanel::class.java)
@@ -40,8 +35,8 @@ class RiskToolWindowPanel(private val project: Project) : JPanel(BorderLayout())
     private val scorePanel = JPanel().apply {
         layout = BoxLayout(this, BoxLayout.Y_AXIS)
         border = javax.swing.BorderFactory.createEmptyBorder(8, 8, 8, 8)
-        minimumSize = Dimension(200, 100)
-        preferredSize = Dimension(300, 100)
+        minimumSize = Dimension(200, 150)
+        preferredSize = Dimension(400, 150)
     }
     private val licenseBanner = JPanel().apply {
         layout = BorderLayout()
@@ -58,16 +53,9 @@ class RiskToolWindowPanel(private val project: Project) : JPanel(BorderLayout())
     private val performanceLabel = JLabel("Performance: --")
     private val securityLabel = JLabel("Security: --")
     private val findingsLabel = JLabel("Findings")
-    private val explanationLabel = JLabel("Explanations")
-    private val issuesLabel = JLabel("Issues")
     private val findingsModel = DefaultListModel<String>()
     private val findingsList = JList(findingsModel)
-    private val issuesModel = DefaultListModel<String>()
-    private val issuesList = JList(issuesModel)
-    private val explanationArea = JTextArea()
     private var unsubscribe: (() -> Unit)? = null
-    private var currentFindings: List<Finding> = emptyList()
-    private var selectedCategory: Category? = null
 
     init {
         logger.info("RiskToolWindowPanel init start")
@@ -83,49 +71,14 @@ class RiskToolWindowPanel(private val project: Project) : JPanel(BorderLayout())
         performanceLabel.font = categoryFont
         securityLabel.font = categoryFont
 
-        listOf(complexityLabel, duplicationLabel, performanceLabel, securityLabel).forEach { label ->
-            label.cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
-            label.addMouseListener(object : MouseAdapter() {
-                override fun mouseClicked(e: MouseEvent?) {
-                    when (label) {
-                        complexityLabel -> displayCategoryIssues(Category.COMPLEXITY)
-                        duplicationLabel -> displayCategoryIssues(Category.DUPLICATION)
-                        performanceLabel -> displayCategoryIssues(Category.PERFORMANCE)
-                        securityLabel -> displayCategoryIssues(Category.SECURITY)
-                    }
-                }
-            })
-        }
-
-        explanationArea.isEditable = false
-        explanationArea.lineWrap = true
-        explanationArea.wrapStyleWord = true
-
-        issuesList.cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
-        issuesList.addMouseListener(object : MouseAdapter() {
-            override fun mouseClicked(e: MouseEvent) {
-                val index = issuesList.locationToIndex(e.point)
-                val selected = selectedCategory
-                val categoryFindings = selected?.let { currentFindings.filter { finding -> finding.category == it } }.orEmpty()
-                if (index >= 0 && index < categoryFindings.size) {
-                    openFindingLocation(categoryFindings[index])
-                }
-            }
-        })
-
         val centerPanel = JPanel(BorderLayout())
         val bottomPanel = JPanel().apply {
             layout = BoxLayout(this, BoxLayout.Y_AXIS)
-            preferredSize = Dimension(0, 160)
+            preferredSize = Dimension(0, 0)
         }
 
         centerPanel.add(findingsLabel, BorderLayout.NORTH)
         centerPanel.add(JScrollPane(findingsList), BorderLayout.CENTER)
-
-        bottomPanel.add(issuesLabel)
-        bottomPanel.add(JScrollPane(issuesList))
-        bottomPanel.add(explanationLabel)
-        bottomPanel.add(JScrollPane(explanationArea))
 
         licenseBanner.add(licenseLabel, BorderLayout.CENTER)
         licenseBanner.add(licenseActionButton, BorderLayout.EAST)
@@ -168,7 +121,6 @@ class RiskToolWindowPanel(private val project: Project) : JPanel(BorderLayout())
                     performanceLabel.text = "Performance: --"
                     securityLabel.text = "Security: --"
                     findingsModel.clear()
-                    explanationArea.text = "No analysis yet."
                 }
 
                 AnalysisViewState.Loading -> {
@@ -178,7 +130,6 @@ class RiskToolWindowPanel(private val project: Project) : JPanel(BorderLayout())
                     performanceLabel.text = "Performance: analyzing..."
                     securityLabel.text = "Security: analyzing..."
                     findingsModel.clear()
-                    explanationArea.text = "Running local risk analysis..."
                 }
 
                 is AnalysisViewState.Error -> {
@@ -188,7 +139,6 @@ class RiskToolWindowPanel(private val project: Project) : JPanel(BorderLayout())
                     performanceLabel.text = "Performance: error"
                     securityLabel.text = "Security: error"
                     findingsModel.clear()
-                    explanationArea.text = state.message
                 }
 
                 is AnalysisViewState.Ready -> {
@@ -200,7 +150,6 @@ class RiskToolWindowPanel(private val project: Project) : JPanel(BorderLayout())
                     securityLabel.text = "Security: ${result.securityScore}/100"
                     logger.info("Updated score labels: overall=${overallScoreLabel.text}")
                     renderFindings(result.findings)
-                    explanationArea.text = result.explanations.joinToString("\n\n")
                 }
             }
             logger.info("Render complete for state: ${state::class.simpleName}")
@@ -208,32 +157,10 @@ class RiskToolWindowPanel(private val project: Project) : JPanel(BorderLayout())
     }
 
     private fun renderFindings(findings: List<Finding>) {
-        currentFindings = findings
         findingsModel.clear()
         findings.forEach { finding ->
             findingsModel.addElement("[${finding.severity}] ${finding.title}: ${finding.detail}")
         }
-        selectedCategory?.let { displayCategoryIssues(it) }
-    }
-
-    private fun displayCategoryIssues(category: Category) {
-        selectedCategory = category
-        issuesModel.clear()
-
-        val categoryFindings = currentFindings.filter { it.category == category }
-        if (categoryFindings.isEmpty()) {
-            issuesModel.addElement("No issues found for ${category.name.lowercase().replaceFirstChar { it.titlecase() }}.")
-            explanationArea.text = "No file-level issues were detected for this category in the current analysis."
-            return
-        }
-
-        categoryFindings.forEach { finding ->
-            val fileName = finding.filePath?.substringAfterLast('/') ?: "Unknown file"
-            val lineInfo = finding.lineNumber?.let { "line $it" } ?: "line unknown"
-            issuesModel.addElement("$fileName:$lineInfo - [${finding.severity}] ${finding.title}")
-        }
-
-        explanationArea.text = "Click any issue entry to open the affected file in the editor."
     }
 
     private fun openFindingLocation(finding: Finding) {

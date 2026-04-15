@@ -27,7 +27,7 @@
     <idea-version since-build="233" />
 
     <!-- version: increment this for every minor release. The first 2 numbers should match the release-version -->
-    <version>1.0.0</version>
+    <version>1.0.1</version>
 
     <name>AI Code Quality Risk</name>
     <id>com.aicodequalityrisk.plugin</id>
@@ -101,6 +101,7 @@
     <extensions defaultExtensionNs="com.intellij">
         <!-- Project Services -->
         <projectService serviceImplementation="com.aicodequalityrisk.plugin.state.AnalysisStateStore"/>
+        <projectService serviceImplementation="com.aicodequalityrisk.plugin.service.LicenseService"/>
         <projectService serviceImplementation="com.aicodequalityrisk.plugin.capture.DiffCaptureService"/>
         <projectService serviceImplementation="com.aicodequalityrisk.plugin.pipeline.AnalysisOrchestrator"/>
         <projectService serviceImplementation="com.aicodequalityrisk.plugin.analysis.LocalMockAnalyzerClient"/>
@@ -141,6 +142,10 @@
     </actions>
 
     <change-notes><![CDATA[
+    <h>1.0.1 - 2026-04-14</h>
+    <ul>
+        <li>General improvements and bug fixes</li>
+    </ul>
     <h>1.0.0 - 2026-04-12</h>
     <ul>
         <li>Initial release to IntelliJ Marketplace</li>
