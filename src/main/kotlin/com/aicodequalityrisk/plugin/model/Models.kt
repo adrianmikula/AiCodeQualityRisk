@@ -23,13 +23,23 @@ enum class TriggerType {
 
 data class RiskResult(
     val score: Int,
-    val complexityScore: Int,
-    val duplicationScore: Int,
-    val performanceScore: Int,
-    val securityScore: Int,
-    val findings: List<Finding>,
-    val explanations: List<String>,
-    val sourceFilePath: String?
+    val complexityScore: Int = 0,
+    val duplicationScore: Int = 0,
+    val performanceScore: Int = 0,
+    val securityScore: Int = 0,
+    val boilerplateBloatScore: Int = 0,
+    val verboseCommentSpamScore: Int = 0,
+    val overDefensiveProgrammingScore: Int = 0,
+    val magicNumbersScore: Int = 0,
+    val complexBooleanLogicScore: Int = 0,
+    val deepNestingScore: Int = 0,
+    val verboseLoggingScore: Int = 0,
+    val poorNamingScore: Int = 0,
+    val frameworkMisuseScore: Int = 0,
+    val excessiveDocumentationScore: Int = 0,
+    val findings: List<Finding> = emptyList(),
+    val explanations: List<String> = emptyList(),
+    val sourceFilePath: String? = null
 )
 
 data class Finding(

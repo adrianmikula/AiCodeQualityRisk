@@ -32,11 +32,23 @@ class RiskToolWindowPanel(private val project: Project) : JPanel(BorderLayout())
         logger.warn("LicenseService lookup failed: ${e.message}")
         null
     }
+    private val SCORE_GREEN = Color(34, 139, 34)
+    private val SCORE_YELLOW = Color(218, 165, 32)
+    private val SCORE_ORANGE = Color(255, 140, 0)
+    private val SCORE_RED = Color(178, 34, 34)
+
+    private fun getScoreColor(score: Int): Color = when {
+        score <= 10 -> SCORE_GREEN
+        score <= 25 -> SCORE_YELLOW
+        score <= 50 -> SCORE_ORANGE
+        else -> SCORE_RED
+    }
+
     private val scorePanel = JPanel().apply {
         layout = BoxLayout(this, BoxLayout.Y_AXIS)
         border = javax.swing.BorderFactory.createEmptyBorder(8, 8, 8, 8)
-        minimumSize = Dimension(200, 150)
-        preferredSize = Dimension(400, 150)
+        minimumSize = Dimension(200, 300)
+        preferredSize = Dimension(400, 300)
     }
     private val licenseBanner = JPanel().apply {
         layout = BorderLayout()
@@ -52,6 +64,16 @@ class RiskToolWindowPanel(private val project: Project) : JPanel(BorderLayout())
     private val duplicationLabel = JLabel("Duplication: --")
     private val performanceLabel = JLabel("Performance: --")
     private val securityLabel = JLabel("Security: --")
+    private val boilerplateBloatLabel = JLabel("Boilerplate Bloat: --")
+    private val verboseCommentSpamLabel = JLabel("Verbose Comments: --")
+    private val overDefensiveLabel = JLabel("Over-Defensive: --")
+    private val magicNumbersLabel = JLabel("Magic Numbers: --")
+    private val complexBooleanLabel = JLabel("Complex Boolean: --")
+    private val deepNestingLabel = JLabel("Deep Nesting: --")
+    private val verboseLoggingLabel = JLabel("Verbose Logging: --")
+    private val poorNamingLabel = JLabel("Poor Naming: --")
+    private val frameworkMisuseLabel = JLabel("Framework Misuse: --")
+    private val excessiveDocsLabel = JLabel("Excessive Docs: --")
     private val findingsLabel = JLabel("Findings")
     private val findingsModel = DefaultListModel<String>()
     private val findingsList = JList(findingsModel)
@@ -64,12 +86,32 @@ class RiskToolWindowPanel(private val project: Project) : JPanel(BorderLayout())
         scorePanel.add(duplicationLabel)
         scorePanel.add(performanceLabel)
         scorePanel.add(securityLabel)
+        scorePanel.add(boilerplateBloatLabel)
+        scorePanel.add(verboseCommentSpamLabel)
+        scorePanel.add(overDefensiveLabel)
+        scorePanel.add(magicNumbersLabel)
+        scorePanel.add(complexBooleanLabel)
+        scorePanel.add(deepNestingLabel)
+        scorePanel.add(verboseLoggingLabel)
+        scorePanel.add(poorNamingLabel)
+        scorePanel.add(frameworkMisuseLabel)
+        scorePanel.add(excessiveDocsLabel)
 
         val categoryFont = Font(overallScoreLabel.font.name, Font.BOLD, overallScoreLabel.font.size)
         complexityLabel.font = categoryFont
         duplicationLabel.font = categoryFont
         performanceLabel.font = categoryFont
         securityLabel.font = categoryFont
+        boilerplateBloatLabel.font = categoryFont
+        verboseCommentSpamLabel.font = categoryFont
+        overDefensiveLabel.font = categoryFont
+        magicNumbersLabel.font = categoryFont
+        complexBooleanLabel.font = categoryFont
+        deepNestingLabel.font = categoryFont
+        verboseLoggingLabel.font = categoryFont
+        poorNamingLabel.font = categoryFont
+        frameworkMisuseLabel.font = categoryFont
+        excessiveDocsLabel.font = categoryFont
 
         val centerPanel = JPanel(BorderLayout())
         val bottomPanel = JPanel().apply {
@@ -120,6 +162,16 @@ class RiskToolWindowPanel(private val project: Project) : JPanel(BorderLayout())
                     duplicationLabel.text = "Duplication: --"
                     performanceLabel.text = "Performance: --"
                     securityLabel.text = "Security: --"
+                    boilerplateBloatLabel.text = "Boilerplate Bloat: --"
+                    verboseCommentSpamLabel.text = "Verbose Comments: --"
+                    overDefensiveLabel.text = "Over-Defensive: --"
+                    magicNumbersLabel.text = "Magic Numbers: --"
+                    complexBooleanLabel.text = "Complex Boolean: --"
+                    deepNestingLabel.text = "Deep Nesting: --"
+                    verboseLoggingLabel.text = "Verbose Logging: --"
+                    poorNamingLabel.text = "Poor Naming: --"
+                    frameworkMisuseLabel.text = "Framework Misuse: --"
+                    excessiveDocsLabel.text = "Excessive Docs: --"
                     findingsModel.clear()
                 }
 
@@ -129,6 +181,16 @@ class RiskToolWindowPanel(private val project: Project) : JPanel(BorderLayout())
                     duplicationLabel.text = "Duplication: analyzing..."
                     performanceLabel.text = "Performance: analyzing..."
                     securityLabel.text = "Security: analyzing..."
+                    boilerplateBloatLabel.text = "Boilerplate Bloat: analyzing..."
+                    verboseCommentSpamLabel.text = "Verbose Comments: analyzing..."
+                    overDefensiveLabel.text = "Over-Defensive: analyzing..."
+                    magicNumbersLabel.text = "Magic Numbers: analyzing..."
+                    complexBooleanLabel.text = "Complex Boolean: analyzing..."
+                    deepNestingLabel.text = "Deep Nesting: analyzing..."
+                    verboseLoggingLabel.text = "Verbose Logging: analyzing..."
+                    poorNamingLabel.text = "Poor Naming: analyzing..."
+                    frameworkMisuseLabel.text = "Framework Misuse: analyzing..."
+                    excessiveDocsLabel.text = "Excessive Docs: analyzing..."
                     findingsModel.clear()
                 }
 
@@ -138,16 +200,51 @@ class RiskToolWindowPanel(private val project: Project) : JPanel(BorderLayout())
                     duplicationLabel.text = "Duplication: error"
                     performanceLabel.text = "Performance: error"
                     securityLabel.text = "Security: error"
+                    boilerplateBloatLabel.text = "Boilerplate Bloat: error"
+                    verboseCommentSpamLabel.text = "Verbose Comments: error"
+                    overDefensiveLabel.text = "Over-Defensive: error"
+                    magicNumbersLabel.text = "Magic Numbers: error"
+                    complexBooleanLabel.text = "Complex Boolean: error"
+                    deepNestingLabel.text = "Deep Nesting: error"
+                    verboseLoggingLabel.text = "Verbose Logging: error"
+                    poorNamingLabel.text = "Poor Naming: error"
+                    frameworkMisuseLabel.text = "Framework Misuse: error"
+                    excessiveDocsLabel.text = "Excessive Docs: error"
                     findingsModel.clear()
                 }
 
                 is AnalysisViewState.Ready -> {
                     val result = state.result
                     overallScoreLabel.text = "Overall Risk Score: ${result.score}/100"
+                    overallScoreLabel.foreground = getScoreColor(result.score)
                     complexityLabel.text = "Complexity: ${result.complexityScore}/100"
+                    complexityLabel.foreground = getScoreColor(result.complexityScore)
                     duplicationLabel.text = "Duplication: ${result.duplicationScore}/100"
+                    duplicationLabel.foreground = getScoreColor(result.duplicationScore)
                     performanceLabel.text = "Performance: ${result.performanceScore}/100"
+                    performanceLabel.foreground = getScoreColor(result.performanceScore)
                     securityLabel.text = "Security: ${result.securityScore}/100"
+                    securityLabel.foreground = getScoreColor(result.securityScore)
+                    boilerplateBloatLabel.text = "Boilerplate Bloat: ${result.boilerplateBloatScore}/100"
+                    boilerplateBloatLabel.foreground = getScoreColor(result.boilerplateBloatScore)
+                    verboseCommentSpamLabel.text = "Verbose Comments: ${result.verboseCommentSpamScore}/100"
+                    verboseCommentSpamLabel.foreground = getScoreColor(result.verboseCommentSpamScore)
+                    overDefensiveLabel.text = "Over-Defensive: ${result.overDefensiveProgrammingScore}/100"
+                    overDefensiveLabel.foreground = getScoreColor(result.overDefensiveProgrammingScore)
+                    magicNumbersLabel.text = "Magic Numbers: ${result.magicNumbersScore}/100"
+                    magicNumbersLabel.foreground = getScoreColor(result.magicNumbersScore)
+                    complexBooleanLabel.text = "Complex Boolean: ${result.complexBooleanLogicScore}/100"
+                    complexBooleanLabel.foreground = getScoreColor(result.complexBooleanLogicScore)
+                    deepNestingLabel.text = "Deep Nesting: ${result.deepNestingScore}/100"
+                    deepNestingLabel.foreground = getScoreColor(result.deepNestingScore)
+                    verboseLoggingLabel.text = "Verbose Logging: ${result.verboseLoggingScore}/100"
+                    verboseLoggingLabel.foreground = getScoreColor(result.verboseLoggingScore)
+                    poorNamingLabel.text = "Poor Naming: ${result.poorNamingScore}/100"
+                    poorNamingLabel.foreground = getScoreColor(result.poorNamingScore)
+                    frameworkMisuseLabel.text = "Framework Misuse: ${result.frameworkMisuseScore}/100"
+                    frameworkMisuseLabel.foreground = getScoreColor(result.frameworkMisuseScore)
+                    excessiveDocsLabel.text = "Excessive Docs: ${result.excessiveDocumentationScore}/100"
+                    excessiveDocsLabel.foreground = getScoreColor(result.excessiveDocumentationScore)
                     logger.info("Updated score labels: overall=${overallScoreLabel.text}")
                     renderFindings(result.findings)
                 }

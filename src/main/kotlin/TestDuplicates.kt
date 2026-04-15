@@ -8,15 +8,12 @@ class TestDuplicates {
         println("Hello")
         println("World")
     }
-
+ 
 
     fun method3() {
         println("Hello")
         println("World")
     }
-    
-
-    
 
     fun complexMethod() {
         val x = 1

@@ -65,6 +65,16 @@ class LocalMockAnalyzerClient : AnalyzerClient {
         val boundedDuplication = duplicationScore.coerceIn(0, 100)
         val boundedPerformance = performanceScore.coerceIn(0, 100)
         val boundedSecurity = securityScore.coerceIn(0, 100)
+        val boundedBoilerplateBloat = 0
+        val boundedVerboseCommentSpam = 0
+        val boundedOverDefensive = 0
+        val boundedMagicNumbers = 0
+        val boundedComplexBoolean = 0
+        val boundedDeepNesting = 0
+        val boundedVerboseLogging = 0
+        val boundedPoorNaming = 0
+        val boundedFrameworkMisuse = 0
+        val boundedExcessiveDocs = 0
 
         val explanations = listOf(
             "Risk score combines lightweight syntax heuristics and diff footprint signals.",
@@ -77,6 +87,16 @@ class LocalMockAnalyzerClient : AnalyzerClient {
             duplicationScore = boundedDuplication,
             performanceScore = boundedPerformance,
             securityScore = boundedSecurity,
+            boilerplateBloatScore = boundedBoilerplateBloat,
+            verboseCommentSpamScore = boundedVerboseCommentSpam,
+            overDefensiveProgrammingScore = boundedOverDefensive,
+            magicNumbersScore = boundedMagicNumbers,
+            complexBooleanLogicScore = boundedComplexBoolean,
+            deepNestingScore = boundedDeepNesting,
+            verboseLoggingScore = boundedVerboseLogging,
+            poorNamingScore = boundedPoorNaming,
+            frameworkMisuseScore = boundedFrameworkMisuse,
+            excessiveDocumentationScore = boundedExcessiveDocs,
             findings = findings.take(7),
             explanations = explanations,
             sourceFilePath = input.filePath
