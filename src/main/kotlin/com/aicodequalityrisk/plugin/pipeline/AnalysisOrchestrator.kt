@@ -14,6 +14,7 @@ import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
+import java.util.concurrent.ConcurrentHashMap
 
 @Service(Service.Level.PROJECT)
 class AnalysisOrchestrator private constructor(
@@ -26,6 +27,8 @@ class AnalysisOrchestrator private constructor(
 ) : Disposable {
 
     private val logger = Logger.getInstance(AnalysisOrchestrator::class.java)
+    private val scanCooldowns = ConcurrentHashMap<String, Long>()
+    private val cooldownMs = 30_000L
     constructor(project: Project) : this(
         captureFn = { trigger -> project.service<DiffCaptureService>().captureCurrentContext(project, trigger) },
         analyzeFn = { input -> project.service<LocalMockAnalyzerClient>().analyze(input) },
@@ -49,18 +52,31 @@ class AnalysisOrchestrator private constructor(
         runnerRef.submit {
             updateFn(AnalysisViewState.Loading)
             logger.info("Analysis state set to Loading")
-            try {
-                val input = captureFn(triggerType)
-                if (input == null) {
-                    logger.debug("No analysis input available for trigger=$triggerType")
-                    updateFn(AnalysisViewState.Idle)
-                    logger.info("Analysis state set to Idle (no input)")
+            val input = captureFn(triggerType)
+            if (input == null) {
+                logger.debug("No analysis input available for trigger=$triggerType")
+                updateFn(AnalysisViewState.Idle)
+                logger.info("Analysis state set to Idle (no input)")
+                return@submit
+            }
+            val filePath = input.filePath
+            if (triggerType == TriggerType.EDIT && filePath != null) {
+                val now = System.currentTimeMillis()
+                val lastScan = scanCooldowns[filePath]
+                if (lastScan != null && now - lastScan < cooldownMs) {
+                    logger.info("Analysis skipped: cooldown active for file=$filePath (${(now - lastScan)/1000}s since last scan)")
                     return@submit
                 }
+            }
+            logger.info("Analysis state set to Loading")
+            try {
                 logger.info("Calling analyze function for file=${input.filePath}")
                 val result = analyzeFn(input)
                 logger.info("Analysis complete: score=${result.score}, complexity=${result.complexityScore}")
                 logger.info("Analysis ready for file=${input.filePath} score=${result.score}")
+                if (filePath != null) {
+                    scanCooldowns[filePath] = System.currentTimeMillis()
+                }
                 saveScanFn(result)
                 updateFn(AnalysisViewState.Ready(result))
                 logger.info("Analysis state set to Ready")
@@ -75,6 +91,7 @@ class AnalysisOrchestrator private constructor(
     }
 
     override fun dispose() {
+        scanCooldowns.clear()
         runnerRef.shutdown()
     }
 

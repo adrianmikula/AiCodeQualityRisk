@@ -3,6 +3,7 @@ package com.aicodequalityrisk.plugin.ui
 import com.aicodequalityrisk.plugin.model.AnalysisViewState
 import com.aicodequalityrisk.plugin.model.Finding
 import com.aicodequalityrisk.plugin.model.LicenseStatus
+import com.aicodequalityrisk.plugin.model.Severity
 import com.aicodequalityrisk.plugin.service.LicenseService
 import com.aicodequalityrisk.plugin.state.AnalysisStateStore
 import com.intellij.openapi.application.ApplicationManager
@@ -16,13 +17,17 @@ import java.awt.BorderLayout
 import java.awt.Color
 import java.awt.Dimension
 import java.awt.Font
+import java.awt.event.MouseAdapter
+import java.awt.event.MouseEvent
 import javax.swing.BoxLayout
-import javax.swing.DefaultListModel
 import javax.swing.JButton
 import javax.swing.JLabel
-import javax.swing.JList
 import javax.swing.JPanel
 import javax.swing.JScrollPane
+import javax.swing.JTable
+import javax.swing.table.DefaultTableModel
+import javax.swing.table.TableCellRenderer
+import javax.swing.table.TableColumn
 
 class RiskToolWindowPanel(private val project: Project) : JPanel(BorderLayout()) {
     private val logger = Logger.getInstance(RiskToolWindowPanel::class.java)
@@ -74,10 +79,11 @@ class RiskToolWindowPanel(private val project: Project) : JPanel(BorderLayout())
     private val poorNamingLabel = JLabel("Poor Naming: --")
     private val frameworkMisuseLabel = JLabel("Framework Misuse: --")
     private val excessiveDocsLabel = JLabel("Excessive Docs: --")
-    private val findingsLabel = JLabel("Findings")
-    private val findingsModel = DefaultListModel<String>()
-    private val findingsList = JList(findingsModel)
+    private val findingsLabel = JLabel("Scan Results")
+    private val findingsTableModel = DefaultTableModel(arrayOf("File", "Issue", "Severity"), 0)
+    private val findingsTable = JTable(findingsTableModel)
     private var unsubscribe: (() -> Unit)? = null
+    private var findingsCache: List<Finding> = emptyList()
 
     init {
         logger.info("RiskToolWindowPanel init start")
@@ -119,8 +125,28 @@ class RiskToolWindowPanel(private val project: Project) : JPanel(BorderLayout())
             preferredSize = Dimension(0, 0)
         }
 
+        findingsTable.columnModel.getColumn(0).preferredWidth = 150
+        findingsTable.columnModel.getColumn(1).preferredWidth = 350
+        findingsTable.columnModel.getColumn(2).preferredWidth = 80
+        findingsTable.columnModel.getColumn(2).maxWidth = 100
+        findingsTable.setRowHeight(24)
+        findingsTable.setFont(Font("SansSerif", Font.PLAIN, 12))
+        findingsTable.setDefaultRenderer(Object::class.java, SeverityCellRenderer())
+        findingsTable.addMouseListener(object : MouseAdapter() {
+            override fun mouseClicked(e: MouseEvent) {
+                if (e.clickCount == 1) {
+                    val row = findingsTable.selectedRow
+                    if (row >= 0 && row < findingsCache.size) {
+                        openFindingLocation(findingsCache[row])
+                    }
+                }
+            }
+        })
+        val findingsScrollPane = JScrollPane(findingsTable)
+        findingsScrollPane.preferredSize = Dimension(600, 300)
+
         centerPanel.add(findingsLabel, BorderLayout.NORTH)
-        centerPanel.add(JScrollPane(findingsList), BorderLayout.CENTER)
+        centerPanel.add(findingsScrollPane, BorderLayout.CENTER)
 
         licenseBanner.add(licenseLabel, BorderLayout.CENTER)
         licenseBanner.add(licenseActionButton, BorderLayout.EAST)
@@ -191,7 +217,7 @@ class RiskToolWindowPanel(private val project: Project) : JPanel(BorderLayout())
                 poorNamingLabel.text = "Poor Naming: --"
                 frameworkMisuseLabel.text = "Framework Misuse: --"
                 excessiveDocsLabel.text = "Excessive Docs: --"
-                findingsModel.clear()
+                findingsTableModel.setRowCount(0)
             } else {
                 when (state) {
                     is AnalysisViewState.Idle -> {
@@ -210,7 +236,7 @@ class RiskToolWindowPanel(private val project: Project) : JPanel(BorderLayout())
                         poorNamingLabel.text = "Poor Naming: --"
                         frameworkMisuseLabel.text = "Framework Misuse: --"
                         excessiveDocsLabel.text = "Excessive Docs: --"
-                        findingsModel.clear()
+                        findingsTableModel.setRowCount(0)
                     }
 
                     is AnalysisViewState.Loading -> {
@@ -229,7 +255,7 @@ class RiskToolWindowPanel(private val project: Project) : JPanel(BorderLayout())
                         poorNamingLabel.text = "Poor Naming: analyzing..."
                         frameworkMisuseLabel.text = "Framework Misuse: analyzing..."
                         excessiveDocsLabel.text = "Excessive Docs: analyzing..."
-                        findingsModel.clear()
+                        findingsTableModel.setRowCount(0)
                     }
 
                     is AnalysisViewState.Error -> {
@@ -248,7 +274,7 @@ class RiskToolWindowPanel(private val project: Project) : JPanel(BorderLayout())
                         poorNamingLabel.text = "Poor Naming: error"
                         frameworkMisuseLabel.text = "Framework Misuse: error"
                         excessiveDocsLabel.text = "Excessive Docs: error"
-                        findingsModel.clear()
+                        findingsTableModel.setRowCount(0)
                     }
 
                     is AnalysisViewState.Ready -> {
@@ -293,9 +319,12 @@ class RiskToolWindowPanel(private val project: Project) : JPanel(BorderLayout())
     }
 
     private fun renderFindings(findings: List<Finding>) {
-        findingsModel.clear()
+        findingsCache = findings
+        findingsTableModel.setRowCount(0)
         findings.forEach { finding ->
-            findingsModel.addElement("[${finding.severity}] ${finding.title}: ${finding.detail}")
+            val fileName = finding.filePath?.substringAfterLast("/") ?: "-"
+            val issue = "${finding.title}: ${finding.detail}"
+            findingsTableModel.addRow(arrayOf(fileName, issue, finding.severity.name))
         }
     }
 
@@ -350,5 +379,42 @@ class RiskToolWindowPanel(private val project: Project) : JPanel(BorderLayout())
         scorePanel.revalidate()
         scorePanel.repaint()
         logger.info("License banner added to scorePanel")
+    }
+
+    private fun getSeverityColor(severity: Severity): Color = when (severity) {
+        Severity.LOW -> SCORE_GREEN
+        Severity.MEDIUM -> SCORE_ORANGE
+        Severity.HIGH -> SCORE_RED
+    }
+
+    private inner class SeverityCellRenderer : TableCellRenderer {
+        override fun getTableCellRendererComponent(
+            table: JTable,
+            value: Any?,
+            isSelected: Boolean,
+            hasFocus: Boolean,
+            row: Int,
+            column: Int
+        ): java.awt.Component {
+            val label = JLabel(value?.toString() ?: "")
+            label.font = Font("SansSerif", Font.BOLD, 12)
+            label.horizontalAlignment = JLabel.CENTER
+
+            if (column == 2) {
+                try {
+                    label.foreground = Color.WHITE
+                    label.background = getSeverityColor(Severity.valueOf(value.toString()))
+                    label.isOpaque = true
+                } catch (e: Exception) {
+                    label.background = Color.LIGHT_GRAY
+                    label.isOpaque = true
+                }
+            } else {
+                label.background = if (isSelected) Color.BLUE else Color.WHITE
+                label.foreground = if (isSelected) Color.WHITE else Color.BLACK
+                label.isOpaque = true
+            }
+            return label
+        }
     }
 }

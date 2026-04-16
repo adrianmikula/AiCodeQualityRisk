@@ -93,8 +93,177 @@ class AnalysisOrchestratorTest {
         assertEquals("boom", error.message)
     }
 
+    @Test
+    fun `edit trigger within cooldown period is skipped`() {
+        val states = mutableListOf<AnalysisViewState>()
+        var analyzeCallCount = 0
+        val orchestrator = AnalysisOrchestrator.forTests(
+            capture = {
+                AnalysisInput(
+                    projectPath = "/tmp",
+                    filePath = "/tmp/Test.kt",
+                    trigger = it,
+                    diffText = "+val a = 1",
+                    fileSnapshot = "val a = 1",
+                    astMetrics = com.aicodequalityrisk.plugin.analysis.ASTMetrics()
+                )
+            },
+            analyze = {
+                analyzeCallCount++
+                RiskResult(
+                    score = 25,
+                    sourceFilePath = it.filePath
+                )
+            },
+            updateState = { states += it },
+            runner = CooldownTestRunner()
+        )
+
+        orchestrator.trigger(TriggerType.EDIT)
+        orchestrator.trigger(TriggerType.EDIT)
+
+        assertEquals(1, analyzeCallCount)
+    }
+
+    @Test
+    fun `edit trigger on different file bypasses cooldown`() {
+        val states = mutableListOf<AnalysisViewState>()
+        var analyzeCallCount = 0
+        val orchestrator = AnalysisOrchestrator.forTests(
+            capture = { trigger ->
+                val filePath = if (states.size < 2) "/tmp/Test1.kt" else "/tmp/Test2.kt"
+                AnalysisInput(
+                    projectPath = "/tmp",
+                    filePath = filePath,
+                    trigger = trigger,
+                    diffText = "+val a = 1",
+                    fileSnapshot = "val a = 1",
+                    astMetrics = com.aicodequalityrisk.plugin.analysis.ASTMetrics()
+                )
+            },
+            analyze = {
+                analyzeCallCount++
+                RiskResult(
+                    score = 25,
+                    sourceFilePath = it.filePath
+                )
+            },
+            updateState = { states += it },
+            runner = CooldownTestRunner()
+        )
+
+        orchestrator.trigger(TriggerType.EDIT)
+        orchestrator.trigger(TriggerType.EDIT)
+
+        assertEquals(2, analyzeCallCount)
+    }
+
+    @Test
+    fun `save trigger bypasses cooldown`() {
+        val states = mutableListOf<AnalysisViewState>()
+        var analyzeCallCount = 0
+        val orchestrator = AnalysisOrchestrator.forTests(
+            capture = {
+                AnalysisInput(
+                    projectPath = "/tmp",
+                    filePath = "/tmp/Test.kt",
+                    trigger = it,
+                    diffText = "+val a = 1",
+                    fileSnapshot = "val a = 1",
+                    astMetrics = com.aicodequalityrisk.plugin.analysis.ASTMetrics()
+                )
+            },
+            analyze = {
+                analyzeCallCount++
+                RiskResult(
+                    score = 25,
+                    sourceFilePath = it.filePath
+                )
+            },
+            updateState = { states += it },
+            runner = CooldownTestRunner()
+        )
+
+        orchestrator.trigger(TriggerType.SAVE)
+        orchestrator.trigger(TriggerType.SAVE)
+
+        assertEquals(2, analyzeCallCount)
+    }
+
+    @Test
+    fun `focus trigger bypasses cooldown`() {
+        val states = mutableListOf<AnalysisViewState>()
+        var analyzeCallCount = 0
+        val orchestrator = AnalysisOrchestrator.forTests(
+            capture = {
+                AnalysisInput(
+                    projectPath = "/tmp",
+                    filePath = "/tmp/Test.kt",
+                    trigger = it,
+                    diffText = "+val a = 1",
+                    fileSnapshot = "val a = 1",
+                    astMetrics = com.aicodequalityrisk.plugin.analysis.ASTMetrics()
+                )
+            },
+            analyze = {
+                analyzeCallCount++
+                RiskResult(
+                    score = 25,
+                    sourceFilePath = it.filePath
+                )
+            },
+            updateState = { states += it },
+            runner = CooldownTestRunner()
+        )
+
+        orchestrator.trigger(TriggerType.FOCUS)
+        orchestrator.trigger(TriggerType.FOCUS)
+
+        assertEquals(2, analyzeCallCount)
+    }
+
+    @Test
+    fun `manual trigger bypasses cooldown`() {
+        val states = mutableListOf<AnalysisViewState>()
+        var analyzeCallCount = 0
+        val orchestrator = AnalysisOrchestrator.forTests(
+            capture = {
+                AnalysisInput(
+                    projectPath = "/tmp",
+                    filePath = "/tmp/Test.kt",
+                    trigger = it,
+                    diffText = "+val a = 1",
+                    fileSnapshot = "val a = 1",
+                    astMetrics = com.aicodequalityrisk.plugin.analysis.ASTMetrics()
+                )
+            },
+            analyze = {
+                analyzeCallCount++
+                RiskResult(
+                    score = 25,
+                    sourceFilePath = it.filePath
+                )
+            },
+            updateState = { states += it },
+            runner = CooldownTestRunner()
+        )
+
+        orchestrator.trigger(TriggerType.MANUAL)
+        orchestrator.trigger(TriggerType.MANUAL)
+
+        assertEquals(2, analyzeCallCount)
+    }
+
     private class ImmediateRunner : TaskRunner {
         override fun submit(task: () -> Unit) = task()
+        override fun shutdown() = Unit
+    }
+
+    private class CooldownTestRunner : TaskRunner {
+        override fun submit(task: () -> Unit) {
+            Thread(task).start()
+            Thread.sleep(50)
+        }
         override fun shutdown() = Unit
     }
 }
