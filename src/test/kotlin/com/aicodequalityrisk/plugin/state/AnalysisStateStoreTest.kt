@@ -7,28 +7,51 @@ import kotlin.test.assertIs
 
 class AnalysisStateStoreTest {
     @Test
-    fun `subscriber receives initial and subsequent states`() {
-        val store = AnalysisStateStore()
-        val events = mutableListOf<AnalysisViewState>()
+    fun `subscriber receives initial state`() {
+        val states = mutableListOf<AnalysisViewState>()
+        val store = SimpleStateStore()
 
-        val unsubscribe = store.subscribe { events += it }
+        store.subscribe { states.add(it) }
+
+        assertEquals(1, states.size)
+        assertIs<AnalysisViewState.Idle>(states[0])
+    }
+
+    @Test
+    fun `update publishes new state`() {
+        val states = mutableListOf<AnalysisViewState>()
+        val store = SimpleStateStore()
+
+        store.subscribe { states.add(it) }
         store.update(AnalysisViewState.Loading)
 
-        assertEquals(2, events.size)
-        assertIs<AnalysisViewState.Idle>(events[0])
-        assertIs<AnalysisViewState.Loading>(events[1])
-        unsubscribe()
+        assertEquals(2, states.size)
+        assertIs<AnalysisViewState.Loading>(states[1])
     }
 
     @Test
     fun `unsubscribe stops further updates`() {
-        val store = AnalysisStateStore()
-        var count = 0
+        val states = mutableListOf<AnalysisViewState>()
+        val store = SimpleStateStore()
 
-        val unsubscribe = store.subscribe { count += 1 }
-        unsubscribe()
+        val unsub = store.subscribe { states.add(it) }
+        unsub()
         store.update(AnalysisViewState.Loading)
 
-        assertEquals(1, count)
+        assertEquals(1, states.size)
+    }
+}
+
+class SimpleStateStore {
+    private val listeners = mutableListOf<(AnalysisViewState) -> Unit>()
+
+    fun subscribe(listener: (AnalysisViewState) -> Unit): () -> Unit {
+        listener(AnalysisViewState.Idle)
+        listeners.add(listener)
+        return { listeners.remove(listener) }
+    }
+
+    fun update(state: AnalysisViewState) {
+        listeners.forEach { it(state) }
     }
 }

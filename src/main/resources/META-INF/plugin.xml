@@ -105,6 +105,7 @@
         <projectService serviceImplementation="com.aicodequalityrisk.plugin.capture.DiffCaptureService"/>
         <projectService serviceImplementation="com.aicodequalityrisk.plugin.pipeline.AnalysisOrchestrator"/>
         <projectService serviceImplementation="com.aicodequalityrisk.plugin.analysis.LocalMockAnalyzerClient"/>
+        <projectService serviceImplementation="com.aicodequalityrisk.plugin.mcp.McpServerService"/>
 
         <!-- Startup Activity -->
         <postStartupActivity implementation="com.aicodequalityrisk.plugin.startup.PluginStartupActivity"/>

@@ -2,6 +2,7 @@ package com.aicodequalityrisk.plugin.pipeline
 
 import com.aicodequalityrisk.plugin.analysis.LocalMockAnalyzerClient
 import com.aicodequalityrisk.plugin.capture.DiffCaptureService
+import com.aicodequalityrisk.plugin.mcp.McpServerService
 import com.aicodequalityrisk.plugin.model.AnalysisInput
 import com.aicodequalityrisk.plugin.model.AnalysisViewState
 import com.aicodequalityrisk.plugin.model.RiskResult
@@ -20,7 +21,8 @@ class AnalysisOrchestrator private constructor(
     private val analyzeFn: (AnalysisInput) -> RiskResult,
     private val updateFn: (AnalysisViewState) -> Unit,
     private val runnerRef: TaskRunner,
-    private val licenseCheck: () -> Boolean
+    private val licenseCheck: () -> Boolean,
+    private val saveScanFn: (RiskResult) -> Unit
 ) : Disposable {
 
     private val logger = Logger.getInstance(AnalysisOrchestrator::class.java)
@@ -29,7 +31,11 @@ class AnalysisOrchestrator private constructor(
         analyzeFn = { input -> project.service<LocalMockAnalyzerClient>().analyze(input) },
         updateFn = { state -> project.service<AnalysisStateStore>().update(state) },
         runnerRef = LatestOnlyRunner(),
-        licenseCheck = { project.service<LicenseService>().isTrialExpired() }
+        licenseCheck = { project.service<LicenseService>().isTrialExpired() },
+        saveScanFn = { result ->
+            project.service<McpServerService>().saveLatestScan(result)
+            project.service<McpServerService>().saveScanForFile(result)
+        }
     )
 
     fun trigger(triggerType: TriggerType) {
@@ -55,6 +61,7 @@ class AnalysisOrchestrator private constructor(
                 val result = analyzeFn(input)
                 logger.info("Analysis complete: score=${result.score}, complexity=${result.complexityScore}")
                 logger.info("Analysis ready for file=${input.filePath} score=${result.score}")
+                saveScanFn(result)
                 updateFn(AnalysisViewState.Ready(result))
                 logger.info("Analysis state set to Ready")
             } catch (interrupted: InterruptedException) {
@@ -77,10 +84,11 @@ class AnalysisOrchestrator private constructor(
             analyze: (AnalysisInput) -> RiskResult,
             updateState: (AnalysisViewState) -> Unit,
             runner: TaskRunner,
-            isTrialExpired: Boolean = false
+            isTrialExpired: Boolean = false,
+            saveScan: (RiskResult) -> Unit = {}
         ): AnalysisOrchestrator = AnalysisOrchestrator(
             capture, analyze, updateState, runner,
-            { isTrialExpired }
+            { isTrialExpired }, saveScan
         )
     }
 }

@@ -2,7 +2,8 @@ import org.jetbrains.intellij.tasks.RunIdeTask
 
 plugins {
     id("org.jetbrains.intellij") version "1.17.4"
-    kotlin("jvm") version "1.9.25"
+    kotlin("jvm") version "2.3.0"
+    kotlin("plugin.serialization") version "2.3.0"
 }
 
 group = "com.aicodequalityrisk"
@@ -10,6 +11,7 @@ version = "1.0.1"
 
 repositories {
     mavenCentral()
+    maven("https://maven.pkg.jetbrains.space/public/p/kotlin-mcp-sdk/sdk")
 }
 
 intellij {
@@ -20,6 +22,8 @@ intellij {
 }
 
 dependencies {
+    implementation("io.modelcontextprotocol:kotlin-sdk:0.11.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
     implementation("org.yaml:snakeyaml:2.0")
     implementation("com.github.javaparser:javaparser-core:3.25.8")
     implementation("io.github.bonede:tree-sitter:0.26.6")
@@ -33,7 +37,9 @@ tasks {
     }
 
     withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-        kotlinOptions.jvmTarget = "17"
+        compilerOptions {
+            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+        }
     }
 
     runIde {
