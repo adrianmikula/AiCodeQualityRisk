@@ -39,8 +39,23 @@ class McpServerService(
     private val latestScanFile: File
         get() = File(dataDir, LATEST_SCAN_FILE)
 
+    @Volatile
+    private var analyzedFileCount = 0
+
     init {
         startMcpServer()
+        CoroutineScope(Dispatchers.IO).launch {
+            refreshFileCount()
+        }
+    }
+
+    fun getAnalyzedFileCount(): Int = analyzedFileCount
+
+    private fun refreshFileCount() {
+        val scansDir = File(dataDir, SCANS_DIR_NAME)
+        val count = scansDir.listFiles()?.count { it.extension == "json" } ?: 0
+        analyzedFileCount = count
+        logger.debug("Initialized file count: $analyzedFileCount")
     }
 
     private fun startMcpServer() {
@@ -330,7 +345,8 @@ class McpServerService(
                 val sanitizedName = filePath.replace("/", "_").replace("\\", "_")
                 val scanFile = File(allScansDir, "$sanitizedName.json")
                 scanFile.writeText(result.toJson())
-                logger.debug("Saved scan for file ${scanFile.absolutePath}")
+                analyzedFileCount++
+                logger.debug("Saved scan for file ${scanFile.absolutePath}, count=$analyzedFileCount")
             } catch (e: Exception) {
                 logger.warn("Failed to save scan for file: $filePath", e)
             }

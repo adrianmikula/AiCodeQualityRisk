@@ -119,7 +119,8 @@ class LocalMockAnalyzerClient : AnalyzerClient {
             excessiveDocumentationScore = boundedExcessiveDocs,
             findings = findings.take(7),
             explanations = explanations,
-            sourceFilePath = input.filePath
+            sourceFilePath = input.filePath,
+            timestamp = System.currentTimeMillis()
         )
         logger.info("Computed RiskResult(score=${result.score}, findings=${result.findings.size}) for file=${input.filePath}")
         return result

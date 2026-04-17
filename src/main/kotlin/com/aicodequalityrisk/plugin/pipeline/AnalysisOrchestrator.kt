@@ -29,6 +29,7 @@ class AnalysisOrchestrator private constructor(
     private val logger = Logger.getInstance(AnalysisOrchestrator::class.java)
     private val scanCooldowns = ConcurrentHashMap<String, Long>()
     private val cooldownMs = 30_000L
+    @Volatile private var currentTaskSeq: Long = 0
     constructor(project: Project) : this(
         captureFn = { trigger -> project.service<DiffCaptureService>().captureCurrentContext(project, trigger) },
         analyzeFn = { input -> project.service<LocalMockAnalyzerClient>().analyze(input) },
@@ -49,7 +50,15 @@ class AnalysisOrchestrator private constructor(
             return
         }
         logger.info("Analysis proceeding - license check passed")
+        // Increment sequence IMMEDIATELY when trigger is called (not delayed)
+        currentTaskSeq = currentTaskSeq + 1
+        val taskSeq = currentTaskSeq
         runnerRef.submit {
+            // Guard: only update state if this is still the latest task
+            if (taskSeq != currentTaskSeq) {
+                logger.debug("Task sequence mismatch: expected $taskSeq, current $currentTaskSeq - ignoring stale task")
+                return@submit
+            }
             updateFn(AnalysisViewState.Loading)
             logger.info("Analysis state set to Loading")
             val input = captureFn(triggerType)
@@ -68,10 +77,20 @@ class AnalysisOrchestrator private constructor(
                     return@submit
                 }
             }
+            // Re-check sequence after async operation (captureFn may have blocked)
+            if (taskSeq != currentTaskSeq) {
+                logger.debug("Task sequence changed after capture - ignoring stale task")
+                return@submit
+            }
             logger.info("Analysis state set to Loading")
             try {
                 logger.info("Calling analyze function for file=${input.filePath}")
                 val result = analyzeFn(input)
+                // Guard: stale task should not update state
+                if (taskSeq != currentTaskSeq) {
+                    logger.debug("Task interrupted by newer analysis - dropping stale result")
+                    return@submit
+                }
                 logger.info("Analysis complete: score=${result.score}, complexity=${result.complexityScore}")
                 logger.info("Analysis ready for file=${input.filePath} score=${result.score}")
                 if (filePath != null) {
@@ -82,10 +101,16 @@ class AnalysisOrchestrator private constructor(
                 logger.info("Analysis state set to Ready")
             } catch (interrupted: InterruptedException) {
                 Thread.currentThread().interrupt()
+                // Don't set Error state - the task was legitimately interrupted
+                logger.info("Analysis interrupted, not updating state")
             } catch (e: Exception) {
                 logger.warn("Analysis failed for trigger=$triggerType", e)
-                updateFn(AnalysisViewState.Error(e.message ?: "Analysis failed"))
-                logger.info("Analysis state set to Error: ${e.message}")
+                if (taskSeq == currentTaskSeq) {
+                    updateFn(AnalysisViewState.Error(e.message ?: "Analysis failed"))
+                    logger.info("Analysis state set to Error: ${e.message}")
+                } else {
+                    logger.debug("Analysis failed but task was stale - ignoring error")
+                }
             }
         }
     }

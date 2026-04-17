@@ -7,6 +7,7 @@ import com.aicodequalityrisk.plugin.model.LicenseStatus
 import com.aicodequalityrisk.plugin.model.Severity
 import com.aicodequalityrisk.plugin.service.LicenseService
 import com.aicodequalityrisk.plugin.state.AnalysisStateStore
+import com.aicodequalityrisk.plugin.mcp.McpServerService
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.fileEditor.FileEditorManager
@@ -40,16 +41,12 @@ class RiskToolWindowPanel(private val project: Project) : JPanel(BorderLayout())
         logger.warn("LicenseService lookup failed: ${e.message}")
         null
     }
-    private val SCORE_GREEN = JBColor(Color(34, 139, 34), Color(60, 179, 113))
-    private val SCORE_YELLOW = JBColor(Color(218, 165, 32), Color(255, 215, 0))
-    private val SCORE_ORANGE = JBColor(Color(255, 140, 0), Color(255, 165, 0))
-    private val SCORE_RED = JBColor(Color(178, 34, 34), Color(205, 92, 92))
 
     private fun getScoreColor(score: Int): Color = when {
-        score <= 10 -> SCORE_GREEN
-        score <= 25 -> SCORE_YELLOW
-        score <= 50 -> SCORE_ORANGE
-        else -> SCORE_RED
+        score <= 10 -> UIConfig.SCORE_GREEN
+        score <= 25 -> UIConfig.SCORE_YELLOW
+        score <= 50 -> UIConfig.SCORE_ORANGE
+        else -> UIConfig.SCORE_RED
     }
 
     private val scorePanel = JPanel().apply {
@@ -58,15 +55,24 @@ class RiskToolWindowPanel(private val project: Project) : JPanel(BorderLayout())
         minimumSize = Dimension(200, 300)
         preferredSize = Dimension(400, 300)
     }
+
+    private val licenseBannerFiller = JPanel().apply {
+        isOpaque = false
+        minimumSize = Dimension(0, 0)
+        maximumSize = Dimension(Short.MAX_VALUE.toInt(), Short.MAX_VALUE.toInt())
+    }
     private val licenseBanner = JPanel().apply {
         layout = BorderLayout()
-        background = JBColor(Color(255, 245, 230), Color(80, 75, 60))
-        border = javax.swing.BorderFactory.createMatteBorder(0, 0, 1, 0, JBColor(Color(200, 180, 150), Color(100, 90, 70)))
+        background = UIConfig.LICENSE_UNLICENSED_BG
+        border = javax.swing.BorderFactory.createMatteBorder(0, 0, 1, 0, JBColor(UIConfig.BANNER_BORDER_LIGHT, UIConfig.BANNER_BORDER_DARK))
         minimumSize = UIConfig.LICENSE_BANNER_MIN
         preferredSize = UIConfig.LICENSE_BANNER_PREFERRED
         maximumSize = UIConfig.LICENSE_BANNER_MAX
+        add(licenseBannerFiller, BorderLayout.CENTER)
     }
-    private val licenseLabel = JLabel()
+    private val licenseLabel = JLabel().apply {
+        border = javax.swing.BorderFactory.createEmptyBorder(0, 12, 0, 0)
+    }
     private val licenseActionButton = JButton().apply {
         maximumSize = UIConfig.LICENSE_BUTTON_MAX
         minimumSize = UIConfig.LICENSE_BUTTON_MIN
@@ -85,6 +91,8 @@ class RiskToolWindowPanel(private val project: Project) : JPanel(BorderLayout())
     private val duplicationLabel = JLabel("Duplication: --")
     private val performanceLabel = JLabel("Performance: --")
     private val securityLabel = JLabel("Security: --")
+    private val lastAnalysisLabel = JLabel("")
+    private val filesAnalyzedLabel = JLabel("")
     private val findingsLabel = JLabel("Scan Results")
     private val findingsContainer = JPanel().apply {
         layout = BoxLayout(this, BoxLayout.Y_AXIS)
@@ -103,13 +111,20 @@ class RiskToolWindowPanel(private val project: Project) : JPanel(BorderLayout())
         scorePanel.add(duplicationLabel)
         scorePanel.add(performanceLabel)
         scorePanel.add(securityLabel)
+        scorePanel.add(lastAnalysisLabel)
+        scorePanel.add(filesAnalyzedLabel)
 
         val categoryFont = Font(overallScoreLabel.font.name, Font.BOLD, overallScoreLabel.font.size)
+        val smallGrayFont = Font(overallScoreLabel.font.name, Font.ITALIC, overallScoreLabel.font.size - 2)
         overallScoreLabel.font = Font(overallScoreLabel.font.name, Font.BOLD, overallScoreLabel.font.size * 2)
         complexityLabel.font = categoryFont
         duplicationLabel.font = categoryFont
         performanceLabel.font = categoryFont
         securityLabel.font = categoryFont
+        lastAnalysisLabel.font = smallGrayFont
+        lastAnalysisLabel.foreground = Color.GRAY
+        filesAnalyzedLabel.font = smallGrayFont
+        filesAnalyzedLabel.foreground = Color.GRAY
 
         val centerPanel = JPanel(BorderLayout())
         val bottomPanel = JPanel().apply {
@@ -123,7 +138,7 @@ class RiskToolWindowPanel(private val project: Project) : JPanel(BorderLayout())
         centerPanel.add(findingsLabel, BorderLayout.NORTH)
         centerPanel.add(findingsScrollPane, BorderLayout.CENTER)
 
-        licenseBanner.add(licenseLabel, BorderLayout.CENTER)
+        licenseBanner.add(licenseLabel, BorderLayout.WEST)
         licenseBanner.add(licenseActionButtonWrapper, BorderLayout.EAST)
 
         licenseActionButton.addActionListener {
@@ -144,12 +159,9 @@ class RiskToolWindowPanel(private val project: Project) : JPanel(BorderLayout())
             }
         }
 
-        // Restore proper layout
         add(scorePanel, BorderLayout.NORTH)
         add(centerPanel, BorderLayout.CENTER)
         add(bottomPanel, BorderLayout.SOUTH)
-
-        // Don't add license banner here - it will be added in updateLicenseBanner()
         
         updateLicenseBanner()
 
@@ -185,11 +197,14 @@ class RiskToolWindowPanel(private val project: Project) : JPanel(BorderLayout())
             } else {
                 when (state) {
                     is AnalysisViewState.Idle -> {
-                        overallScoreLabel.text = "<html>Overall Risk Score: --</html>"
+                        overallScoreLabel.text = "<html>Overall Risk Score: waiting for code changes</html>"
+                        overallScoreLabel.foreground = Color.GRAY
                         complexityLabel.text = "Complexity: --"
                         duplicationLabel.text = "Duplication: --"
                         performanceLabel.text = "Performance: --"
                         securityLabel.text = "Security: --"
+                        lastAnalysisLabel.text = ""
+                        filesAnalyzedLabel.text = ""
                         renderFindings(emptyList())
                     }
 
@@ -199,6 +214,8 @@ class RiskToolWindowPanel(private val project: Project) : JPanel(BorderLayout())
                         duplicationLabel.text = "Duplication: analyzing..."
                         performanceLabel.text = "Performance: analyzing..."
                         securityLabel.text = "Security: analyzing..."
+                        lastAnalysisLabel.text = ""
+                        filesAnalyzedLabel.text = ""
                         renderFindings(emptyList())
                     }
 
@@ -208,6 +225,8 @@ class RiskToolWindowPanel(private val project: Project) : JPanel(BorderLayout())
                         duplicationLabel.text = "Duplication: error"
                         performanceLabel.text = "Performance: error"
                         securityLabel.text = "Security: error"
+                        lastAnalysisLabel.text = ""
+                        filesAnalyzedLabel.text = ""
                         renderFindings(emptyList())
                     }
 
@@ -223,6 +242,9 @@ class RiskToolWindowPanel(private val project: Project) : JPanel(BorderLayout())
                         performanceLabel.foreground = getScoreColor(result.performanceConsolidated)
                         securityLabel.text = "Security: ${result.securityConsolidated}/100"
                         securityLabel.foreground = getScoreColor(result.securityConsolidated)
+                        lastAnalysisLabel.text = "last analysis: ${formatRelativeTime(result.timestamp)}"
+                        val fileCount = McpServerService.getInstance(project).getAnalyzedFileCount()
+                        filesAnalyzedLabel.text = "$fileCount files analyzed"
                         logger.info("Updated score labels: overall=${overallScoreLabel.text}")
                         renderFindings(result.findings)
                     }
@@ -254,8 +276,8 @@ class RiskToolWindowPanel(private val project: Project) : JPanel(BorderLayout())
         val isExpanded = categoryExpanded[category] ?: true
         
         val headerPanel = JPanel(BorderLayout()).apply {
-            background = JBColor(Color(240, 240, 245), Color(60, 63, 66))
-            border = javax.swing.BorderFactory.createMatteBorder(1, 1, 1, 1, JBColor(Color(200, 200, 200), Color(80, 80, 80)))
+            background = UIConfig.ACCORDION_HEADER_BG
+            border = javax.swing.BorderFactory.createMatteBorder(1, 1, 1, 1, UIConfig.ACCORDION_BORDER)
             cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
             isOpaque = true
         }
@@ -288,7 +310,9 @@ class RiskToolWindowPanel(private val project: Project) : JPanel(BorderLayout())
         })
         
         if (findings.isNotEmpty()) {
-            val tableModel = DefaultTableModel(arrayOf("File", "Issue", "Severity"), 0)
+            val tableModel = object : DefaultTableModel(arrayOf("File", "Issue", "Severity"), 0) {
+                override fun isCellEditable(row: Int, column: Int): Boolean = false
+            }
             val table = JTable(tableModel)
             
             table.columnModel.getColumn(0).preferredWidth = 150
@@ -353,29 +377,27 @@ class RiskToolWindowPanel(private val project: Project) : JPanel(BorderLayout())
         val status = licenseService.getLicenseStatus()
         logger.info("License status: $status")
         
-        // Add license banner at the TOP of scorePanel (first component)
-        // This won't conflict with BorderLayout since it's inside scorePanel
         when (status) {
             LicenseStatus.LICENSED -> {
                 scorePanel.remove(licenseBanner)
             }
             LicenseStatus.TRIAL -> {
-                licenseBanner.background = Color(230, 255, 230)
+                licenseBanner.background = UIConfig.LICENSE_ACTIVATED_BG
                 licenseLabel.text = "Trial Active - Full Access"
+                licenseLabel.font = Font(licenseLabel.font.name, Font.BOLD, licenseLabel.font.size)
                 licenseActionButton.text = "Upgrade Now"
-                // Remove and re-add at index 0
                 scorePanel.remove(licenseBanner)
                 scorePanel.add(licenseBanner, 0)
             }
             LicenseStatus.TRIAL_EXPIRED -> {
-                licenseBanner.background = Color(255, 230, 230)
+                licenseBanner.background = UIConfig.LICENSE_EXPIRED_BG
                 licenseLabel.text = "Trial Expired - Upgrade to Unlock"
                 licenseActionButton.text = "Upgrade Now"
                 scorePanel.remove(licenseBanner)
                 scorePanel.add(licenseBanner, 0)
             }
             LicenseStatus.UNLICENSED -> {
-                licenseBanner.background = Color(255, 245, 230)
+                licenseBanner.background = UIConfig.LICENSE_UNLICENSED_BG
                 licenseLabel.text = "Start Free Trial for Full Access"
                 licenseActionButton.text = "Start Free Trial"
                 scorePanel.remove(licenseBanner)
@@ -388,9 +410,9 @@ class RiskToolWindowPanel(private val project: Project) : JPanel(BorderLayout())
     }
 
     private fun getSeverityColor(severity: Severity): Color = when (severity) {
-        Severity.LOW -> SCORE_GREEN
-        Severity.MEDIUM -> SCORE_ORANGE
-        Severity.HIGH -> SCORE_RED
+        Severity.LOW -> UIConfig.SCORE_GREEN
+        Severity.MEDIUM -> UIConfig.SCORE_ORANGE
+        Severity.HIGH -> UIConfig.SCORE_RED
     }
 
     private inner class SeverityCellRenderer : TableCellRenderer {
@@ -412,15 +434,32 @@ class RiskToolWindowPanel(private val project: Project) : JPanel(BorderLayout())
                     label.background = getSeverityColor(Severity.valueOf(value.toString()))
                     label.isOpaque = true
                 } catch (e: Exception) {
-                    label.background = JBColor(Color.LIGHT_GRAY, Color.darkGray)
+                    label.background = UIConfig.TABLE_SEVERITY_FALLBACK
                     label.isOpaque = true
                 }
             } else {
-                label.background = if (isSelected) JBColor(Color(51, 153, 255), Color(80, 80, 80)) else JBColor.white
+                label.background = if (isSelected) UIConfig.TABLE_SELECTED_BG else JBColor.white
                 label.foreground = if (isSelected) Color.WHITE else JBColor.black
                 label.isOpaque = true
             }
             return label
+        }
+    }
+
+    private fun formatRelativeTime(timestamp: Long): String {
+        if (timestamp == 0L) return "unknown"
+        val now = System.currentTimeMillis()
+        val diff = now - timestamp
+        val seconds = diff / 1000
+        val minutes = seconds / 60
+        val hours = minutes / 60
+        val days = hours / 24
+        return when {
+            seconds < 60 -> "just now"
+            minutes < 60 -> "${minutes}m ago"
+            hours < 24 -> "${hours}h ago"
+            days < 7 -> "${days}d ago"
+            else -> "${days / 7}w ago"
         }
     }
 }

@@ -105,7 +105,6 @@
         <projectService serviceImplementation="com.aicodequalityrisk.plugin.capture.DiffCaptureService"/>
         <projectService serviceImplementation="com.aicodequalityrisk.plugin.pipeline.AnalysisOrchestrator"/>
         <projectService serviceImplementation="com.aicodequalityrisk.plugin.analysis.LocalMockAnalyzerClient"/>
-        <projectService serviceImplementation="com.aicodequalityrisk.plugin.mcp.McpServerService"/>
 
         <!-- Startup Activity -->
         <postStartupActivity implementation="com.aicodequalityrisk.plugin.startup.PluginStartupActivity"/>
@@ -143,9 +142,9 @@
     </actions>
 
     <change-notes><![CDATA[
-    <h>1.0.2 - 2026-04-16</h>
+    <h>1.0.2 - 2026-04-17</h>
     <ul>
-        <li>Added MCP server</li>
+        <li>Disabled MCP server (temporarily)</li>
         <li>Click to jump to problem files</li>
         <li>UI layout improvements</li>
     </ul>

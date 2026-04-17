@@ -8,7 +8,12 @@ public class AllRiskCategoriesDemo {
     // 1. BOILERPLATE BLOAT: averageMethodLength > 50, maxMethodLength > 100
     //    duplicateStringLiteralCount > 3
     // ============================================================
-    
+
+
+
+
+
+
     public void veryLongMethodWithBoilerplate() {
         String message1 = "Processing data";
         String message2 = "Processing data";

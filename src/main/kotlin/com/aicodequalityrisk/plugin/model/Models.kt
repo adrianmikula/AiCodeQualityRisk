@@ -43,7 +43,8 @@ data class RiskResult(
     val excessiveDocumentationScore: Int = 0,
     val findings: List<Finding> = emptyList(),
     val explanations: List<String> = emptyList(),
-    val sourceFilePath: String? = null
+    val sourceFilePath: String? = null,
+    val timestamp: Long = 0L
 ) {
     val complexityConsolidated: Int
         get() = listOf(complexityScore, deepNestingScore, complexBooleanLogicScore, overDefensiveProgrammingScore).average().toInt()
@@ -79,7 +80,8 @@ data class RiskResult(
                     (item as? Map<*, *>)?.let { parseFinding(it) }
                 } ?: emptyList(),
                 explanations = (map["explanations"] as? List<*>)?.mapNotNull { it as? String } ?: emptyList(),
-                sourceFilePath = map["sourceFilePath"] as? String
+                sourceFilePath = map["sourceFilePath"] as? String,
+                timestamp = (map["timestamp"] as? Double)?.toLong() ?: 0L
             )
         }
 
@@ -192,6 +194,8 @@ data class RiskResult(
         sb.append("],")
         sb.append("\"sourceFilePath\":")
         sb.append(if (sourceFilePath != null) "\"${sourceFilePath?.replace("\"", "\\\"")}\"" else "null")
+        sb.append(",")
+        sb.append("\"timestamp\":$timestamp")
         sb.append("}")
         return sb.toString()
     }
