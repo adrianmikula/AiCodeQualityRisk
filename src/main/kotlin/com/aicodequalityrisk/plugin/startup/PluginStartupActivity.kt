@@ -1,7 +1,10 @@
 package com.aicodequalityrisk.plugin.startup
 
+import com.aicodequalityrisk.plugin.analysis.Category
 import com.aicodequalityrisk.plugin.model.TriggerType
 import com.aicodequalityrisk.plugin.pipeline.AnalysisOrchestrator
+import com.aicodequalityrisk.plugin.ui.RiskToolWindowPanel
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.editor.event.DocumentEvent
@@ -14,6 +17,10 @@ import com.intellij.openapi.fileEditor.FileEditorManagerEvent
 import com.intellij.openapi.fileEditor.FileEditorManagerListener
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.startup.ProjectActivity
+import com.intellij.openapi.wm.ToolWindowManager
+import com.intellij.openapi.wm.ToolWindowAnchor
+import com.intellij.openapi.wm.RegisterToolWindowTask
+import com.intellij.ui.content.ContentFactory
 
 class PluginStartupActivity : ProjectActivity {
     override suspend fun execute(project: Project) {
@@ -52,6 +59,24 @@ class PluginStartupActivity : ProjectActivity {
         if (FileEditorManager.getInstance(project).selectedTextEditor != null) {
             logger.info("Project startup detected active editor; triggering initial risk analysis.")
             fire(TriggerType.FOCUS)
+        }
+
+        // Register the "AI Code Risk" tool window programmatically without using ToolWindowFactory
+        ApplicationManager.getApplication().invokeLater {
+            val toolWindowManager = ToolWindowManager.getInstance(project)
+            val existingToolWindow = toolWindowManager.getToolWindow("AI Code Risk")
+            if (existingToolWindow == null) {
+                // Create tool window using the non-deprecated RegisterToolWindowTask API
+                val toolWindow = toolWindowManager.registerToolWindow(
+                    RegisterToolWindowTask.notClosable(
+                        id = "AI Code Risk",
+                        anchor = ToolWindowAnchor.RIGHT
+                    )
+                )
+                // Add content directly to the tool window
+                val content = ContentFactory.getInstance().createContent(RiskToolWindowPanel(project), "", false)
+                toolWindow.contentManager.addContent(content)
+            }
         }
     }
 

@@ -109,13 +109,6 @@
         <!-- Startup Activity -->
         <postStartupActivity implementation="com.aicodequalityrisk.plugin.startup.PluginStartupActivity"/>
 
-        <!-- Tool Window -->
-        <toolWindow
-                id="AI Code Risk"
-                anchor="right"
-                factoryClass="com.aicodequalityrisk.plugin.ui.RiskToolWindowFactory"
-                canCloseContent="false"/>
-
         <!-- Editor Integration -->
         <linePainter implementation="com.aicodequalityrisk.plugin.editor.InlineRiskLinePainter"/>
     </extensions>
