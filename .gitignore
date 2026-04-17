@@ -26,3 +26,14 @@ sandbox/
 
 # Local plugin distribution archives
 *.zip
+
+# Compiled classes
+bin/
+
+# Eclipse
+.classpath
+.project
+.settings/
+
+# AI tools
+.kilo/plans/

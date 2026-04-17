@@ -24,7 +24,7 @@
         optional="true"/>
 
     <!-- idea-version: Exclude the until-build attribute entirely, giving open-ended compatibility with all future IntelliJ versions. -->
-    <idea-version since-build="242" />
+    <idea-version since-build="242.*" />
 
     <!-- version: increment this for every minor release. The first 2 numbers should match the release-version -->
     <version>1.0.2</version>
