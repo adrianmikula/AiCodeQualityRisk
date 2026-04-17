@@ -21,5 +21,8 @@ Thumbs.db
 idea-sandbox/
 sandbox/
 
+# IntelliJ Platform runtime (downloaded/coroutines agent)
+.intellijPlatform/
+
 # Local plugin distribution archives
 *.zip

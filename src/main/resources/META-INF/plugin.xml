@@ -24,10 +24,10 @@
         optional="true"/>
 
     <!-- idea-version: Exclude the until-build attribute entirely, giving open-ended compatibility with all future IntelliJ versions. -->
-    <idea-version since-build="233" />
+    <idea-version since-build="242" />
 
     <!-- version: increment this for every minor release. The first 2 numbers should match the release-version -->
-    <version>1.0.1</version>
+    <version>1.0.2</version>
 
     <name>AI Code Quality Risk</name>
     <id>com.aicodequalityrisk.plugin</id>
@@ -143,6 +143,12 @@
     </actions>
 
     <change-notes><![CDATA[
+    <h>1.0.2 - 2026-04-16</h>
+    <ul>
+        <li>Added MCP server</li>
+        <li>Click to jump to problem files</li>
+        <li>UI layout improvements</li>
+    </ul>
     <h>1.0.1 - 2026-04-14</h>
     <ul>
         <li>General improvements and bug fixes</li>

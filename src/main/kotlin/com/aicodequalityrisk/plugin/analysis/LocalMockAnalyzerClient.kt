@@ -82,8 +82,27 @@ class LocalMockAnalyzerClient : AnalyzerClient {
             "Use this score as triage guidance; prioritize HIGH severity findings first."
         )
 
+        val categoryScores = listOf(
+            boundedComplexity,
+            boundedDuplication,
+            boundedPerformance,
+            boundedSecurity,
+            boundedBoilerplateBloat,
+            boundedVerboseCommentSpam,
+            boundedOverDefensive,
+            boundedMagicNumbers,
+            boundedComplexBoolean,
+            boundedDeepNesting,
+            boundedVerboseLogging,
+            boundedPoorNaming,
+            boundedFrameworkMisuse,
+            boundedExcessiveDocs
+        )
+        val averageScore = if (categoryScores.isNotEmpty()) categoryScores.sum() / categoryScores.size else 0
+        val averagedOverallScore = averageScore.coerceIn(0, 100)
+
         val result = RiskResult(
-            score = boundedScore,
+            score = averagedOverallScore,
             complexityScore = boundedComplexity,
             duplicationScore = boundedDuplication,
             performanceScore = boundedPerformance,

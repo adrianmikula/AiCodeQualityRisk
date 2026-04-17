@@ -1,5 +1,6 @@
 package com.aicodequalityrisk.plugin.ui
 
+import com.aicodequalityrisk.plugin.analysis.Category
 import com.aicodequalityrisk.plugin.model.AnalysisViewState
 import com.aicodequalityrisk.plugin.model.Finding
 import com.aicodequalityrisk.plugin.model.LicenseStatus
@@ -13,8 +14,10 @@ import com.intellij.openapi.fileEditor.OpenFileDescriptor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.ide.BrowserUtil
+import com.intellij.ui.JBColor
 import java.awt.BorderLayout
 import java.awt.Color
+import java.awt.Cursor
 import java.awt.Dimension
 import java.awt.Font
 import java.awt.event.MouseAdapter
@@ -37,10 +40,10 @@ class RiskToolWindowPanel(private val project: Project) : JPanel(BorderLayout())
         logger.warn("LicenseService lookup failed: ${e.message}")
         null
     }
-    private val SCORE_GREEN = Color(34, 139, 34)
-    private val SCORE_YELLOW = Color(218, 165, 32)
-    private val SCORE_ORANGE = Color(255, 140, 0)
-    private val SCORE_RED = Color(178, 34, 34)
+    private val SCORE_GREEN = JBColor(Color(34, 139, 34), Color(60, 179, 113))
+    private val SCORE_YELLOW = JBColor(Color(218, 165, 32), Color(255, 215, 0))
+    private val SCORE_ORANGE = JBColor(Color(255, 140, 0), Color(255, 165, 0))
+    private val SCORE_RED = JBColor(Color(178, 34, 34), Color(205, 92, 92))
 
     private fun getScoreColor(score: Int): Color = when {
         score <= 10 -> SCORE_GREEN
@@ -57,31 +60,39 @@ class RiskToolWindowPanel(private val project: Project) : JPanel(BorderLayout())
     }
     private val licenseBanner = JPanel().apply {
         layout = BorderLayout()
-        background = Color(255, 245, 230)
-        border = javax.swing.BorderFactory.createMatteBorder(0, 0, 1, 0, Color(200, 180, 150))
-        minimumSize = Dimension(200, 36)
-        preferredSize = Dimension(300, 36)
+        background = JBColor(Color(255, 245, 230), Color(80, 75, 60))
+        border = javax.swing.BorderFactory.createMatteBorder(0, 0, 1, 0, JBColor(Color(200, 180, 150), Color(100, 90, 70)))
+        minimumSize = UIConfig.LICENSE_BANNER_MIN
+        preferredSize = UIConfig.LICENSE_BANNER_PREFERRED
+        maximumSize = UIConfig.LICENSE_BANNER_MAX
     }
     private val licenseLabel = JLabel()
-    private val licenseActionButton = JButton()
+    private val licenseActionButton = JButton().apply {
+        maximumSize = UIConfig.LICENSE_BUTTON_MAX
+        minimumSize = UIConfig.LICENSE_BUTTON_MIN
+        preferredSize = UIConfig.LICENSE_BUTTON_PREFERRED
+    }
+    private val licenseActionButtonWrapper = JPanel().apply {
+        layout = BorderLayout()
+        isOpaque = false
+        preferredSize = UIConfig.LICENSE_BUTTON_WRAPPER_PREFERRED
+        maximumSize = UIConfig.LICENSE_BUTTON_WRAPPER_MAX
+        minimumSize = UIConfig.LICENSE_BUTTON_WRAPPER_MIN
+        add(licenseActionButton, BorderLayout.CENTER)
+    }
     private val overallScoreLabel = JLabel("Overall Risk Score: --")
     private val complexityLabel = JLabel("Complexity: --")
     private val duplicationLabel = JLabel("Duplication: --")
     private val performanceLabel = JLabel("Performance: --")
     private val securityLabel = JLabel("Security: --")
-    private val boilerplateBloatLabel = JLabel("Boilerplate Bloat: --")
-    private val verboseCommentSpamLabel = JLabel("Verbose Comments: --")
-    private val overDefensiveLabel = JLabel("Over-Defensive: --")
-    private val magicNumbersLabel = JLabel("Magic Numbers: --")
-    private val complexBooleanLabel = JLabel("Complex Boolean: --")
-    private val deepNestingLabel = JLabel("Deep Nesting: --")
-    private val verboseLoggingLabel = JLabel("Verbose Logging: --")
-    private val poorNamingLabel = JLabel("Poor Naming: --")
-    private val frameworkMisuseLabel = JLabel("Framework Misuse: --")
-    private val excessiveDocsLabel = JLabel("Excessive Docs: --")
     private val findingsLabel = JLabel("Scan Results")
-    private val findingsTableModel = DefaultTableModel(arrayOf("File", "Issue", "Severity"), 0)
-    private val findingsTable = JTable(findingsTableModel)
+    private val findingsContainer = JPanel().apply {
+        layout = BoxLayout(this, BoxLayout.Y_AXIS)
+    }
+    private val findingsCacheByCategory = mutableMapOf<Category, List<Finding>>()
+    private val categoryExpanded = mutableMapOf<Category, Boolean>().apply {
+        Category.entries.forEach { this[it] = true }
+    }
     private var unsubscribe: (() -> Unit)? = null
     private var findingsCache: List<Finding> = emptyList()
 
@@ -92,32 +103,13 @@ class RiskToolWindowPanel(private val project: Project) : JPanel(BorderLayout())
         scorePanel.add(duplicationLabel)
         scorePanel.add(performanceLabel)
         scorePanel.add(securityLabel)
-        scorePanel.add(boilerplateBloatLabel)
-        scorePanel.add(verboseCommentSpamLabel)
-        scorePanel.add(overDefensiveLabel)
-        scorePanel.add(magicNumbersLabel)
-        scorePanel.add(complexBooleanLabel)
-        scorePanel.add(deepNestingLabel)
-        scorePanel.add(verboseLoggingLabel)
-        scorePanel.add(poorNamingLabel)
-        scorePanel.add(frameworkMisuseLabel)
-        scorePanel.add(excessiveDocsLabel)
 
         val categoryFont = Font(overallScoreLabel.font.name, Font.BOLD, overallScoreLabel.font.size)
+        overallScoreLabel.font = Font(overallScoreLabel.font.name, Font.BOLD, overallScoreLabel.font.size * 2)
         complexityLabel.font = categoryFont
         duplicationLabel.font = categoryFont
         performanceLabel.font = categoryFont
         securityLabel.font = categoryFont
-        boilerplateBloatLabel.font = categoryFont
-        verboseCommentSpamLabel.font = categoryFont
-        overDefensiveLabel.font = categoryFont
-        magicNumbersLabel.font = categoryFont
-        complexBooleanLabel.font = categoryFont
-        deepNestingLabel.font = categoryFont
-        verboseLoggingLabel.font = categoryFont
-        poorNamingLabel.font = categoryFont
-        frameworkMisuseLabel.font = categoryFont
-        excessiveDocsLabel.font = categoryFont
 
         val centerPanel = JPanel(BorderLayout())
         val bottomPanel = JPanel().apply {
@@ -125,32 +117,14 @@ class RiskToolWindowPanel(private val project: Project) : JPanel(BorderLayout())
             preferredSize = Dimension(0, 0)
         }
 
-        findingsTable.columnModel.getColumn(0).preferredWidth = 150
-        findingsTable.columnModel.getColumn(1).preferredWidth = 350
-        findingsTable.columnModel.getColumn(2).preferredWidth = 80
-        findingsTable.columnModel.getColumn(2).maxWidth = 100
-        findingsTable.setRowHeight(24)
-        findingsTable.setFont(Font("SansSerif", Font.PLAIN, 12))
-        findingsTable.setDefaultRenderer(Object::class.java, SeverityCellRenderer())
-        findingsTable.addMouseListener(object : MouseAdapter() {
-            override fun mouseClicked(e: MouseEvent) {
-                if (e.clickCount == 1) {
-                    val row = findingsTable.selectedRow
-                    if (row >= 0 && row < findingsCache.size) {
-                        openFindingLocation(findingsCache[row])
-                    }
-                }
-            }
-        })
-        val findingsScrollPane = JScrollPane(findingsTable)
+        val findingsScrollPane = JScrollPane(findingsContainer)
         findingsScrollPane.preferredSize = Dimension(600, 300)
 
         centerPanel.add(findingsLabel, BorderLayout.NORTH)
         centerPanel.add(findingsScrollPane, BorderLayout.CENTER)
 
         licenseBanner.add(licenseLabel, BorderLayout.CENTER)
-        licenseBanner.add(licenseActionButton, BorderLayout.EAST)
-        licenseBanner.preferredSize = Dimension(0, 36)
+        licenseBanner.add(licenseActionButtonWrapper, BorderLayout.EAST)
 
         licenseActionButton.addActionListener {
             val status = licenseService?.getLicenseStatus()
@@ -201,114 +175,54 @@ class RiskToolWindowPanel(private val project: Project) : JPanel(BorderLayout())
                     LicenseStatus.TRIAL_EXPIRED -> "Trial expired - Upgrade to unlock"
                     else -> "License required"
                 }
-                overallScoreLabel.text = "Overall Risk Score: $lockedMessage"
+                overallScoreLabel.text = "<html>Overall Risk Score: $lockedMessage</html>"
                 overallScoreLabel.foreground = Color.GRAY
                 complexityLabel.text = "Complexity: --"
                 duplicationLabel.text = "Duplication: --"
                 performanceLabel.text = "Performance: --"
                 securityLabel.text = "Security: --"
-                boilerplateBloatLabel.text = "Boilerplate Bloat: --"
-                verboseCommentSpamLabel.text = "Verbose Comments: --"
-                overDefensiveLabel.text = "Over-Defensive: --"
-                magicNumbersLabel.text = "Magic Numbers: --"
-                complexBooleanLabel.text = "Complex Boolean: --"
-                deepNestingLabel.text = "Deep Nesting: --"
-                verboseLoggingLabel.text = "Verbose Logging: --"
-                poorNamingLabel.text = "Poor Naming: --"
-                frameworkMisuseLabel.text = "Framework Misuse: --"
-                excessiveDocsLabel.text = "Excessive Docs: --"
-                findingsTableModel.setRowCount(0)
+                renderFindings(emptyList())
             } else {
                 when (state) {
                     is AnalysisViewState.Idle -> {
-                        overallScoreLabel.text = "Overall Risk Score: --"
+                        overallScoreLabel.text = "<html>Overall Risk Score: --</html>"
                         complexityLabel.text = "Complexity: --"
                         duplicationLabel.text = "Duplication: --"
                         performanceLabel.text = "Performance: --"
                         securityLabel.text = "Security: --"
-                        boilerplateBloatLabel.text = "Boilerplate Bloat: --"
-                        verboseCommentSpamLabel.text = "Verbose Comments: --"
-                        overDefensiveLabel.text = "Over-Defensive: --"
-                        magicNumbersLabel.text = "Magic Numbers: --"
-                        complexBooleanLabel.text = "Complex Boolean: --"
-                        deepNestingLabel.text = "Deep Nesting: --"
-                        verboseLoggingLabel.text = "Verbose Logging: --"
-                        poorNamingLabel.text = "Poor Naming: --"
-                        frameworkMisuseLabel.text = "Framework Misuse: --"
-                        excessiveDocsLabel.text = "Excessive Docs: --"
-                        findingsTableModel.setRowCount(0)
+                        renderFindings(emptyList())
                     }
 
                     is AnalysisViewState.Loading -> {
-                        overallScoreLabel.text = "Overall Risk Score: analyzing..."
+                        overallScoreLabel.text = "<html>Overall Risk Score: analyzing...</html>"
                         complexityLabel.text = "Complexity: analyzing..."
                         duplicationLabel.text = "Duplication: analyzing..."
                         performanceLabel.text = "Performance: analyzing..."
                         securityLabel.text = "Security: analyzing..."
-                        boilerplateBloatLabel.text = "Boilerplate Bloat: analyzing..."
-                        verboseCommentSpamLabel.text = "Verbose Comments: analyzing..."
-                        overDefensiveLabel.text = "Over-Defensive: analyzing..."
-                        magicNumbersLabel.text = "Magic Numbers: analyzing..."
-                        complexBooleanLabel.text = "Complex Boolean: analyzing..."
-                        deepNestingLabel.text = "Deep Nesting: analyzing..."
-                        verboseLoggingLabel.text = "Verbose Logging: analyzing..."
-                        poorNamingLabel.text = "Poor Naming: analyzing..."
-                        frameworkMisuseLabel.text = "Framework Misuse: analyzing..."
-                        excessiveDocsLabel.text = "Excessive Docs: analyzing..."
-                        findingsTableModel.setRowCount(0)
+                        renderFindings(emptyList())
                     }
 
                     is AnalysisViewState.Error -> {
-                        overallScoreLabel.text = "Overall Risk Score: error"
+                        overallScoreLabel.text = "<html>Overall Risk Score: error</html>"
                         complexityLabel.text = "Complexity: error"
                         duplicationLabel.text = "Duplication: error"
                         performanceLabel.text = "Performance: error"
                         securityLabel.text = "Security: error"
-                        boilerplateBloatLabel.text = "Boilerplate Bloat: error"
-                        verboseCommentSpamLabel.text = "Verbose Comments: error"
-                        overDefensiveLabel.text = "Over-Defensive: error"
-                        magicNumbersLabel.text = "Magic Numbers: error"
-                        complexBooleanLabel.text = "Complex Boolean: error"
-                        deepNestingLabel.text = "Deep Nesting: error"
-                        verboseLoggingLabel.text = "Verbose Logging: error"
-                        poorNamingLabel.text = "Poor Naming: error"
-                        frameworkMisuseLabel.text = "Framework Misuse: error"
-                        excessiveDocsLabel.text = "Excessive Docs: error"
-                        findingsTableModel.setRowCount(0)
+                        renderFindings(emptyList())
                     }
 
                     is AnalysisViewState.Ready -> {
                         val result = state.result
-                        overallScoreLabel.text = "Overall Risk Score: ${result.score}/100"
+                        overallScoreLabel.text = "<html>Overall Risk Score: ${result.score}/100</html>"
                         overallScoreLabel.foreground = getScoreColor(result.score)
-                        complexityLabel.text = "Complexity: ${result.complexityScore}/100"
-                        complexityLabel.foreground = getScoreColor(result.complexityScore)
-                        duplicationLabel.text = "Duplication: ${result.duplicationScore}/100"
-                        duplicationLabel.foreground = getScoreColor(result.duplicationScore)
-                        performanceLabel.text = "Performance: ${result.performanceScore}/100"
-                        performanceLabel.foreground = getScoreColor(result.performanceScore)
-                        securityLabel.text = "Security: ${result.securityScore}/100"
-                        securityLabel.foreground = getScoreColor(result.securityScore)
-                        boilerplateBloatLabel.text = "Boilerplate Bloat: ${result.boilerplateBloatScore}/100"
-                        boilerplateBloatLabel.foreground = getScoreColor(result.boilerplateBloatScore)
-                        verboseCommentSpamLabel.text = "Verbose Comments: ${result.verboseCommentSpamScore}/100"
-                        verboseCommentSpamLabel.foreground = getScoreColor(result.verboseCommentSpamScore)
-                        overDefensiveLabel.text = "Over-Defensive: ${result.overDefensiveProgrammingScore}/100"
-                        overDefensiveLabel.foreground = getScoreColor(result.overDefensiveProgrammingScore)
-                        magicNumbersLabel.text = "Magic Numbers: ${result.magicNumbersScore}/100"
-                        magicNumbersLabel.foreground = getScoreColor(result.magicNumbersScore)
-                        complexBooleanLabel.text = "Complex Boolean: ${result.complexBooleanLogicScore}/100"
-                        complexBooleanLabel.foreground = getScoreColor(result.complexBooleanLogicScore)
-                        deepNestingLabel.text = "Deep Nesting: ${result.deepNestingScore}/100"
-                        deepNestingLabel.foreground = getScoreColor(result.deepNestingScore)
-                        verboseLoggingLabel.text = "Verbose Logging: ${result.verboseLoggingScore}/100"
-                        verboseLoggingLabel.foreground = getScoreColor(result.verboseLoggingScore)
-                        poorNamingLabel.text = "Poor Naming: ${result.poorNamingScore}/100"
-                        poorNamingLabel.foreground = getScoreColor(result.poorNamingScore)
-                        frameworkMisuseLabel.text = "Framework Misuse: ${result.frameworkMisuseScore}/100"
-                        frameworkMisuseLabel.foreground = getScoreColor(result.frameworkMisuseScore)
-                        excessiveDocsLabel.text = "Excessive Docs: ${result.excessiveDocumentationScore}/100"
-                        excessiveDocsLabel.foreground = getScoreColor(result.excessiveDocumentationScore)
+                        complexityLabel.text = "Complexity: ${result.complexityConsolidated}/100"
+                        complexityLabel.foreground = getScoreColor(result.complexityConsolidated)
+                        duplicationLabel.text = "Duplication: ${result.duplicationConsolidated}/100"
+                        duplicationLabel.foreground = getScoreColor(result.duplicationConsolidated)
+                        performanceLabel.text = "Performance: ${result.performanceConsolidated}/100"
+                        performanceLabel.foreground = getScoreColor(result.performanceConsolidated)
+                        securityLabel.text = "Security: ${result.securityConsolidated}/100"
+                        securityLabel.foreground = getScoreColor(result.securityConsolidated)
                         logger.info("Updated score labels: overall=${overallScoreLabel.text}")
                         renderFindings(result.findings)
                     }
@@ -320,11 +234,103 @@ class RiskToolWindowPanel(private val project: Project) : JPanel(BorderLayout())
 
     private fun renderFindings(findings: List<Finding>) {
         findingsCache = findings
-        findingsTableModel.setRowCount(0)
-        findings.forEach { finding ->
-            val fileName = finding.filePath?.substringAfterLast("/") ?: "-"
-            val issue = "${finding.title}: ${finding.detail}"
-            findingsTableModel.addRow(arrayOf(fileName, issue, finding.severity.name))
+        findingsContainer.removeAll()
+        
+        val grouped = findings.groupBy { it.category }
+        findingsCacheByCategory.clear()
+        findingsCacheByCategory.putAll(grouped)
+        
+        Category.entries.forEach { category ->
+            val categoryFindings = grouped[category] ?: emptyList()
+            val accordionPanel = createAccordionSection(category, categoryFindings)
+            findingsContainer.add(accordionPanel)
+        }
+        
+        findingsContainer.revalidate()
+        findingsContainer.repaint()
+    }
+
+    private fun createAccordionSection(category: Category, findings: List<Finding>): JPanel {
+        val isExpanded = categoryExpanded[category] ?: true
+        
+        val headerPanel = JPanel(BorderLayout()).apply {
+            background = JBColor(Color(240, 240, 245), Color(60, 63, 66))
+            border = javax.swing.BorderFactory.createMatteBorder(1, 1, 1, 1, JBColor(Color(200, 200, 200), Color(80, 80, 80)))
+            cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
+            isOpaque = true
+        }
+        
+        val toggleIcon = if (isExpanded) "▼" else "▶"
+        val headerLabel = JLabel("$toggleIcon ${category.name} (${findings.size} findings)").apply {
+            font = Font("SansSerif", Font.BOLD, 13)
+            border = javax.swing.BorderFactory.createEmptyBorder(8, 12, 8, 12)
+        }
+        
+        val contentPanel = JPanel().apply {
+            layout = BoxLayout(this, BoxLayout.Y_AXIS)
+            isVisible = isExpanded
+        }
+        
+        headerPanel.add(headerLabel, BorderLayout.CENTER)
+        
+        headerPanel.addMouseListener(object : MouseAdapter() {
+            override fun mouseClicked(e: MouseEvent) {
+                val newExpanded = !(categoryExpanded[category] ?: true)
+                categoryExpanded[category] = newExpanded
+                
+                val newToggleIcon = if (newExpanded) "▼" else "▶"
+                headerLabel.text = "$newToggleIcon ${category.name} (${findings.size} findings)"
+                contentPanel.isVisible = newExpanded
+                
+                revalidate()
+                repaint()
+            }
+        })
+        
+        if (findings.isNotEmpty()) {
+            val tableModel = DefaultTableModel(arrayOf("File", "Issue", "Severity"), 0)
+            val table = JTable(tableModel)
+            
+            table.columnModel.getColumn(0).preferredWidth = 150
+            table.columnModel.getColumn(1).preferredWidth = 350
+            table.columnModel.getColumn(2).preferredWidth = 80
+            table.columnModel.getColumn(2).maxWidth = 100
+            table.setRowHeight(24)
+            table.setFont(Font("SansSerif", Font.PLAIN, 12))
+            table.setDefaultRenderer(Object::class.java, SeverityCellRenderer())
+            table.addMouseListener(object : MouseAdapter() {
+                override fun mouseClicked(e: MouseEvent) {
+                    if (e.clickCount == 1) {
+                        val row = table.selectedRow
+                        if (row >= 0 && row < findings.size) {
+                            openFindingLocation(findings[row])
+                        }
+                    }
+                }
+            })
+            
+            findings.forEach { finding ->
+                val fileName = finding.filePath?.substringAfterLast("/") ?: "-"
+                val issue = "${finding.title}: ${finding.detail}"
+                tableModel.addRow(arrayOf(fileName, issue, finding.severity.name))
+            }
+            
+            val tableScrollPane = JScrollPane(table)
+            tableScrollPane.preferredSize = Dimension(580, (findings.size.coerceAtMost(5) * 24 + 30))
+            contentPanel.add(tableScrollPane)
+        } else {
+            val emptyLabel = JLabel("No findings").apply {
+                font = Font("SansSerif", Font.ITALIC, 11)
+                foreground = Color.GRAY
+                border = javax.swing.BorderFactory.createEmptyBorder(8, 40, 8, 12)
+            }
+            contentPanel.add(emptyLabel)
+        }
+        
+        return JPanel(BorderLayout()).apply {
+            add(headerPanel, BorderLayout.NORTH)
+            add(contentPanel, BorderLayout.CENTER)
+            border = javax.swing.BorderFactory.createEmptyBorder(2, 0, 2, 0)
         }
     }
 
@@ -402,16 +408,16 @@ class RiskToolWindowPanel(private val project: Project) : JPanel(BorderLayout())
 
             if (column == 2) {
                 try {
-                    label.foreground = Color.WHITE
+                    label.foreground = JBColor.white
                     label.background = getSeverityColor(Severity.valueOf(value.toString()))
                     label.isOpaque = true
                 } catch (e: Exception) {
-                    label.background = Color.LIGHT_GRAY
+                    label.background = JBColor(Color.LIGHT_GRAY, Color.darkGray)
                     label.isOpaque = true
                 }
             } else {
-                label.background = if (isSelected) Color.BLUE else Color.WHITE
-                label.foreground = if (isSelected) Color.WHITE else Color.BLACK
+                label.background = if (isSelected) JBColor(Color(51, 153, 255), Color(80, 80, 80)) else JBColor.white
+                label.foreground = if (isSelected) Color.WHITE else JBColor.black
                 label.isOpaque = true
             }
             return label

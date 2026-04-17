@@ -45,6 +45,17 @@ data class RiskResult(
     val explanations: List<String> = emptyList(),
     val sourceFilePath: String? = null
 ) {
+    val complexityConsolidated: Int
+        get() = listOf(complexityScore, deepNestingScore, complexBooleanLogicScore, overDefensiveProgrammingScore).average().toInt()
+
+    val duplicationConsolidated: Int
+        get() = listOf(duplicationScore, boilerplateBloatScore).average().toInt()
+
+    val performanceConsolidated: Int
+        get() = listOf(performanceScore, verboseLoggingScore, magicNumbersScore, poorNamingScore, frameworkMisuseScore).average().toInt()
+
+    val securityConsolidated: Int
+        get() = listOf(securityScore, verboseCommentSpamScore, excessiveDocumentationScore).average().toInt()
     companion object {
         fun fromJson(json: String): RiskResult {
             val map = parseJson(json)

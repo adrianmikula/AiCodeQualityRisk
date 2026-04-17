@@ -237,4 +237,74 @@ class McpServerServiceTest {
         assertEquals("Finding 1", parsed.findings[0].title)
         assertEquals("Finding 5", parsed.findings[4].title)
     }
+
+    @Test
+    fun testConsolidatedComplexityScore() {
+        val result = RiskResult(
+            score = 0,
+            complexityScore = 40,
+            deepNestingScore = 20,
+            complexBooleanLogicScore = 60,
+            overDefensiveProgrammingScore = 80
+        )
+        assertEquals(50, result.complexityConsolidated)
+    }
+
+    @Test
+    fun testConsolidatedDuplicationScore() {
+        val result = RiskResult(
+            score = 0,
+            duplicationScore = 30,
+            boilerplateBloatScore = 50
+        )
+        assertEquals(40, result.duplicationConsolidated)
+    }
+
+    @Test
+    fun testConsolidatedPerformanceScore() {
+        val result = RiskResult(
+            score = 0,
+            performanceScore = 20,
+            verboseLoggingScore = 40,
+            magicNumbersScore = 60,
+            poorNamingScore = 80,
+            frameworkMisuseScore = 100
+        )
+        assertEquals(60, result.performanceConsolidated)
+    }
+
+    @Test
+    fun testConsolidatedSecurityScore() {
+        val result = RiskResult(
+            score = 0,
+            securityScore = 25,
+            verboseCommentSpamScore = 50,
+            excessiveDocumentationScore = 75
+        )
+        assertEquals(50, result.securityConsolidated)
+    }
+
+    @Test
+    fun testConsolidatedScoresWithDefaultValues() {
+        val result = RiskResult(score = 50)
+        assertEquals(0, result.complexityConsolidated)
+        assertEquals(0, result.duplicationConsolidated)
+        assertEquals(0, result.performanceConsolidated)
+        assertEquals(0, result.securityConsolidated)
+    }
+
+    @Test
+    fun testConsolidatedScoresInToJson() {
+        val result = RiskResult(
+            score = 0,
+            complexityScore = 30,
+            deepNestingScore = 30,
+            complexBooleanLogicScore = 30,
+            overDefensiveProgrammingScore = 30
+        )
+        assertEquals(30, result.complexityConsolidated)
+        val json = result.toJson()
+        assertTrue(json.contains("complexityScore\":30"))
+        assertTrue(json.contains("deepNestingScore\":30"))
+    }
 }
