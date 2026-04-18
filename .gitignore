@@ -37,3 +37,9 @@ bin/
 
 # AI tools
 .kilo/plans/
+
+# Generated code
+workspace/
+
+# results
+.aicodequalityrisk/

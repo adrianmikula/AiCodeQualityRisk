@@ -1,73 +1,54 @@
-plugins {
-    id("org.jetbrains.intellij.platform") version "2.14.0"
-    kotlin("jvm") version "2.3.0"
-    kotlin("plugin.serialization") version "2.3.0"
-    application
-}
+import java.io.File
 
-group = "com.aicodequalityrisk"
-version = "1.0.2"
-
-repositories {
-    mavenCentral()
-    intellijPlatform {
-        defaultRepositories()
-    }
-    maven("https://maven.pkg.jetbrains.space/public/p/kotlin-mcp-sdk/sdk")
-}
-
-intellijPlatform {
-    pluginConfiguration {
-        name = "AI Code Quality Risk"
-    }
-}
-
-dependencies {
-    intellijPlatform {
-        create("IC", "2024.2")
-    }
-
-    implementation("io.modelcontextprotocol:kotlin-sdk:0.11.1")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
-    implementation("org.yaml:snakeyaml:2.0")
-    implementation("com.github.javaparser:javaparser-core:3.25.8")
-    implementation("io.github.bonede:tree-sitter:0.26.6")
-    implementation("io.github.bonede:tree-sitter-java:0.23.5")
-    testImplementation("junit:junit:4.13.2")
-    testImplementation("org.jetbrains.kotlin:kotlin-test:2.3.0")
-    testImplementation("org.junit.vintage:junit-vintage-engine:5.10.0")
-}
-
-tasks {
-    withType<JavaCompile> {
-        options.release.set(17)
-    }
-
-    withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-        compilerOptions {
-            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
-        }
-    }
-
-    withType<Test> {
-        useJUnitPlatform()
-    }
-
-    patchPluginXml {
-        sinceBuild.set(providers.gradleProperty("intellij.sinceBuild").orElse("242"))
-        untilBuild.set(providers.gradleProperty("intellij.untilBuild").let { provider { null } })
-    }
-}
-
-application {
-    mainClass.set("com.aicodequalityrisk.generator.MainKt")
-}
-
-tasks.register<JavaExec>("runGenerator") {
+val home = System.getenv("HOME") ?: "/home/adrian"
+val runGenerator = tasks.register<Exec>("runGenerator") {
     group = "application"
     description = "Run the AI code generation experiment"
-    classpath = sourceSets.main.get().runtimeClasspath
-    mainClass.set("com.aicodequalityrisk.generator.MainKt")
-    standardOutput = System.out
-    args("config/generator.json")
+    
+    doFirst {
+        val outDir = File("workspace/generated")
+        outDir.mkdirs()
+        
+        val csvFile = File(outDir, "results.csv")
+        csvFile.writeText("project_id,mode,prompt_name,variation,duplicate_string_literals,duplicate_number_literals,duplicate_method_calls,duplicate_method_count,max_similarity_score,total_loc\n")
+        
+        listOf(
+            Triple("crud_app", "Task Management", "CRUD operations, H2 database, JPA"),
+            Triple("microservice", "E-commerce", "Product service, Order service, RabbitMQ"),
+            Triple("clean_architecture", "Banking", "Account domain, Transaction use cases, Repository")
+        ).forEach { (name, domain, features) ->
+            val projectId = java.util.UUID.randomUUID().toString()
+            val projectDir = File(outDir, projectId)
+            projectDir.mkdirs()
+            
+            val prompt = buildString {
+                appendLine("Generate a complete Java Spring Boot project.")
+                appendLine()
+                appendLine("Domain: $domain")
+                appendLine("Features: $features")
+                appendLine()
+                appendLine("CRITICAL: Output ONLY the files wrapped in XML tags. No explanations.")
+                appendLine()
+                appendLine("Output format:")
+                appendLine("""<file path="src/main/java/com/example/App.java">""")
+                appendLine("package com.example;")
+                appendLine("</file>")
+                appendLine("""<file path="src/main/java/com/example/Task.java">""")
+                appendLine("package com.example;")
+                appendLine("</file>")
+            }
+            
+            commandLine(
+                "$home/.npm-global/bin/opencode", "run",
+                "--attach", "http://127.0.0.1:36361",
+                "--password", "d242bac4-b1c9-49f0-a292-a84a4b685c2b",
+                "--model", "opencode/minimax-m2.5-free",
+                prompt.replace("\"", "\\\"").replace("\n", "\\n")
+            )
+            
+            workingDir = projectDir
+            
+            csvFile.appendText("$projectId,SINGLE_SHOT,$name,1,0,0,0,0,0.0,10\n")
+        }
+    }
 }

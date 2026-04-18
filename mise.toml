@@ -1,0 +1,42 @@
+[tools]
+gradle = "9.0"
+
+[tasks.build]
+description = "Build the project (compile + test)"
+run = "gradle build"
+
+[tasks.test]
+description = "Run all unit tests"
+run = "gradle test"
+
+[tasks.check]
+description = "Run all checks (build + test + lint)"
+run = "gradle check"
+
+[tasks.build-plugin]
+description = "Build plugin distribution zip"
+run = "gradle buildPlugin"
+
+[tasks.clean]
+description = "Clean build outputs"
+run = "gradle clean"
+
+[tasks.run]
+description = "Run the Kotlin application"
+run = "gradle run"
+
+[tasks.assemble]
+description = "Assemble outputs without testing"
+run = "gradle assemble"
+
+[tasks.install]
+description = "Install plugin locally for development"
+run = "gradle installPlugin"
+
+[tasks.run-ide]
+description = "Run IDE with plugin installed"
+run = "gradle runIde"
+
+[tasks.watch]
+description = "Watch for changes and rebuild"
+run = "gradle classes --watch"

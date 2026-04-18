@@ -34,9 +34,19 @@ class ExperimentRunner(
                     val projectPath = outputDir.toPath().resolve(projectId)
 
                     println("Generating project $projectId: ${template.name}, $mode, variation ${variation + 1}")
+                    System.err.println(">>> START PROJECT GENERATION")
 
                     try {
                         generateProject(template, mode, projectPath)
+                        
+                        val existingFiles = Files.walk(projectPath)
+                            .filter { it.toString().endsWith(".java") }
+                            .toList()
+                        
+                        if (existingFiles.isEmpty()) {
+                            throw IllegalStateException("No Java files written")
+                        }
+                        
                         val result = detectionRunner.analyze(projectPath)
                         
                         val csvLine = listOf(
@@ -56,6 +66,7 @@ class ExperimentRunner(
                         println("  Result: duplicate strings=${result.duplicateStringLiterals}, loc=${result.totalLoc}")
                     } catch (e: Exception) {
                         System.err.println("  Failed: ${e.message}")
+                        e.printStackTrace()
                         csvFile.appendText("${projectId},${mode.name},${template.name},${variation + 1},-1,-1,-1,-1,-1,-1\n")
                     }
                 }
@@ -67,14 +78,27 @@ class ExperimentRunner(
 
     private fun generateProject(template: PromptTemplate, mode: GenerationMode, projectPath: Path) {
         val basePrompt = promptBuilder.buildBasePrompt(template)
-        val baseResponse = llm.generate(basePrompt)
+        System.err.println("PROMPT: $basePrompt")
+        
+        val baseResponse = try {
+            llm.generate(basePrompt)
+        } catch (e: Exception) {
+            System.err.println("LLM call failed: ${e.message}")
+            throw e
+        }
+        
+        System.err.println("RESPONSE length: ${baseResponse.length}")
+        
         val baseFiles = fileExtractor.extractFiles(baseResponse)
+        System.err.println("EXTRACTED FILES: ${baseFiles.size}")
         
         if (baseFiles.isEmpty()) {
+            System.err.println("RESPONSE:\n${baseResponse.take(1000)}")
             throw IllegalStateException("No files extracted from LLM response")
         }
 
         projectWriter.writeProject(projectPath, baseFiles)
+        System.err.println("WROTE ${baseFiles.size} files to $projectPath")
 
         if (mode == GenerationMode.ITERATIVE && template.iterationFeatures.isNotEmpty()) {
             val existingFilesList = Files.walk(projectPath)

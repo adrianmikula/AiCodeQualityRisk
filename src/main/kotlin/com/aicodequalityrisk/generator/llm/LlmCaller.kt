@@ -1,59 +1,59 @@
 package com.aicodequalityrisk.generator.llm
 
+import java.io.File
 import java.io.BufferedReader
 import java.io.InputStreamReader
 
 class LlmCaller(
     private val model: String = "opencode/big-pickle",
     private val maxRetries: Int = 3,
-    private val retryDelayMs: Long = 2000
+    private val retryDelayMs: Long = 3000
 ) {
     fun generate(prompt: String): String {
-        var lastError: Exception? = null
-        
-        for (attempt in 1..maxRetries) {
+        repeat(maxRetries) { attempt ->
             try {
-                return callOpenCode(prompt)
-            } catch (e: Exception) {
-                lastError = e
-                System.err.println("Attempt $attempt failed: ${e.message}")
-                if (attempt < maxRetries) {
-                    Thread.sleep(retryDelayMs)
+                System.err.println("Calling LLM...")
+                val result = callOpenCode(prompt)
+                if (result.isNotBlank() && result.length > 50) {
+                    System.err.println("Success: ${result.length} chars")
+                    return result
                 }
+                System.err.println("Empty response")
+            } catch (e: Exception) {
+                System.err.println("Failed: ${e.message}")
             }
+            Thread.sleep(retryDelayMs)
         }
-        throw lastError ?: IllegalStateException("LLM call failed after $maxRetries attempts")
+        throw IllegalStateException("All attempts failed")
     }
 
     private fun callOpenCode(prompt: String): String {
-        val escapedPrompt = prompt.replace("'", "'\\''")
-        val fullCommand = "PATH=\$HOME/.npm-global/bin:\$PATH opencode run --yes --dangerously-skip-permissions --model $model '$escapedPrompt'"
-        System.err.println("DEBUG: $fullCommand")
+        val home = System.getenv("HOME") ?: "/home/adrian"
+        val binPath = "$home/.npm-global/bin"
         
-        val processBuilder = ProcessBuilder()
-        processBuilder.command("bash", "-c", fullCommand)
+        val script = File.createTempFile("call_llm_", ".sh")
+        script.writeText("""
+            |#!/bin/bash
+            |cd /tmp
+            |exec $binPath/opencode run --attach http://127.0.0.1:36361 --password d242bac4-b1c9-49f0-a292-a84a4b685c2b --model $model "$prompt"
+        """.trimMargin())
+        script.setExecutable(true)
         
-        val process = processBuilder.start()
-        val reader = BufferedReader(InputStreamReader(process.inputStream))
-        val errorReader = BufferedReader(InputStreamReader(process.errorStream))
-        val output = StringBuilder()
+        val pb = ProcessBuilder()
+        pb.command(script.absolutePath)
+        pb.directory(File("/tmp"))
+        pb.redirectErrorStream(true)
         
-        var line: String?
-        while (reader.readLine().also { line = it } != null) {
-            output.appendLine(line)
+        val proc = pb.start()
+        val output = proc.inputStream.bufferedReader().readText()
+        proc.waitFor()
+        
+        script.delete()
+        
+        if (output.contains("Error:", ignoreCase = true) || !output.contains("file")) {
+            throw IllegalStateException("LLM error")
         }
         
-        val errorOutput = StringBuilder()
-        while (errorReader.readLine().also { line = it } != null) {
-            errorOutput.appendLine(line)
-        }
-        
-        val exitCode = process.waitFor()
-        if (exitCode != 0) {
-            System.err.println("STDERR: $errorOutput")
-            throw IllegalStateException("opencode failed with exit code $exitCode: $output")
-        }
-        
-        return output.toString()
+        return output
     }
 }
