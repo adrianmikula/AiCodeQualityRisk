@@ -11,9 +11,6 @@ public class AllRiskCategoriesDemo {
 
 
 
-
-
-
     public void veryLongMethodWithBoilerplate() {
         String message1 = "Processing data";
         String message2 = "Processing data";

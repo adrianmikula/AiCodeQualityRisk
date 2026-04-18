@@ -1,0 +1,32 @@
+{
+  "name": "ai-code-quality-analysis",
+  "outputDir": "generated",
+  "model": "opencode/big-pickle",
+  "maxRetries": 3,
+  "retryDelayMs": 2000,
+  "promptTemplates": [
+    {
+      "name": "crud_app",
+      "domain": "Task Management",
+      "architecture": "Spring Boot REST API",
+      "features": ["CRUD operations", "H2 database", "JPA"],
+      "iterationFeatures": ["Add pagination", "Add validation"]
+    },
+    {
+      "name": "microservice",
+      "domain": "E-commerce",
+      "architecture": "Spring Boot Microservice",
+      "features": ["Product service", "Order service", "RabbitMQ"],
+      "iterationFeatures": ["Add caching", "Add retry"]
+    },
+    {
+      "name": "clean_architecture",
+      "domain": "Banking",
+      "architecture": "Clean Architecture",
+      "features": ["Account domain", "Transaction use cases", "Repository"],
+      "iterationFeatures": ["Add audit logging", "Add notifications"]
+    }
+  ],
+  "modes": ["SINGLE_SHOT", "ITERATIVE"],
+  "variationsPerPrompt": 3
+}

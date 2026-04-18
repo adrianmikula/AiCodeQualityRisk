@@ -2,6 +2,7 @@ plugins {
     id("org.jetbrains.intellij.platform") version "2.14.0"
     kotlin("jvm") version "2.3.0"
     kotlin("plugin.serialization") version "2.3.0"
+    application
 }
 
 group = "com.aicodequalityrisk"
@@ -56,4 +57,17 @@ tasks {
         sinceBuild.set(providers.gradleProperty("intellij.sinceBuild").orElse("242"))
         untilBuild.set(providers.gradleProperty("intellij.untilBuild").let { provider { null } })
     }
+}
+
+application {
+    mainClass.set("com.aicodequalityrisk.generator.MainKt")
+}
+
+tasks.register<JavaExec>("runGenerator") {
+    group = "application"
+    description = "Run the AI code generation experiment"
+    classpath = sourceSets.main.get().runtimeClasspath
+    mainClass.set("com.aicodequalityrisk.generator.MainKt")
+    standardOutput = System.out
+    args("config/generator.json")
 }
