@@ -1,12 +1,12 @@
-## Final Implementation Plan: AI Code Slop Pattern Detection Tests
+## Final Implementation Plan: AI Code Entropy Pattern Detection Tests
 
-Based on my research, I'll create a comprehensive test file `AiCodeSlopPatternsTest.kt` with **100 tests across 10 categories** that detect AI-generated code patterns.
+Based on my research, I'll create a comprehensive test file `CodeEntropyPatternsTest.kt` with **100 tests across 10 categories** that detect AI-generated code patterns that increase structural entropy.
 
 ---
 
-### Project: `AiCodeSlopPatternsTest.kt`
+### Project: `CodeEntropyPatternsTest.kt`
 
-**Location**: `src/test/kotlin/com/aicodequalityrisk/plugin/analysis/AiCodeSlopPatternsTest.kt`
+**Location**: `src/test/kotlin/com/aicodequalityrisk/plugin/analysis/CodeEntropyPatternsTest.kt`
 
 ---
 
@@ -53,7 +53,7 @@ Based on my research, I'll create a comprehensive test file `AiCodeSlopPatternsT
 
 ### Implementation Tasks
 
-1. **Create** `AiCodeSlopPatternsTest.kt` with 10 inner test classes
+1. **Create** `CodeEntropyPatternsTest.kt` with 10 inner test classes
 2. **Category 1-5 tests** (50 tests) - Leverages existing ASTMetrics
 3. **Category 6-10 tests** (50 tests) - May require extending detection
 4. **Run tests** with `./gradlew test` to verify detection

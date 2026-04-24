@@ -1,4 +1,4 @@
-<idea-plugin xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://plugins.jetbrains.com/schemas/plugin/2/plugin.xsd" icon="pluginIcon.svg">
+<idea-plugin xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://plugins.jetbrains.com/schemas/plugin/2/plugin.xsd" icon="icons/pluginIcon_32.png">
     <!-- Freemium Monetization Parameters in product-descriptor  element: -->
 
     <!-- code: Your Product Code must:
@@ -27,39 +27,32 @@
     <idea-version since-build="242.*" />
 
     <!-- version: increment this for every minor release. The first 2 numbers should match the release-version -->
-    <version>1.0.2</version>
+    <version>1.0.3</version>
 
-    <name>AI Code Quality Risk</name>
+    <name>EntropyGuard</name>
     <id>com.aicodequalityrisk.plugin</id>
-    <vendor email="adrian.m@tuta.io" name="Adrian M" url="https://github.com/adrianmikula/AiCodeQualityRisk">AI Code Quality Risk</vendor>
+    <vendor email="adrian.m@tuta.io" name="Adrian M" url="https://github.com/adrianmikula/AiCodeQualityRisk">EntropyGuard</vendor>
     <category>Code Analysis</category>
 
 
     <description><![CDATA[
-    <h2>AI-Powered Code Quality and Risk Analysis</h2>
+    <h2>EntropyGuard — AI Code Entropy Detection</h2>
 
-    <p>Analyze your in-progress code changes in real-time and receive instant risk assessments with actionable findings. This plugin uses advanced AI to identify potential issues, security vulnerabilities, and code quality problems before they reach production.</p>
+    <p>Detect structural disorder in your codebase before it compounds. EntropyGuard analyzes in-progress code changes in real-time to identify how AI-generated code introduces hidden entropy—structural disorder that increases over time without obvious failure.</p>
 
-    <h3>Why AI Code Quality Risk?</h3>
-    <p>In today's fast-paced development environment, catching issues early is crucial. Our AI-powered analysis provides immediate feedback on code changes, helping developers maintain high code quality standards and reduce technical debt.</p>
+    <h3>Why EntropyGuard?</h3>
+    <p>AI-generated code is not broken—it gradually increases system entropy. EntropyGuard detects this hidden structural degradation, helping developers maintain codebase health and prevent technical debt from compounding silently.</p>
 
     <h3>Key Features</h3>
     <ul>
-    <li>- <b>Real-time Analysis</b> - Analyze code changes as you type</li>
-    <li>- <b>Risk Scoring</b> - Get instant risk scores for your code modifications</li>
+    <li>- <b>Real-time Entropy Detection</b> - Analyze code changes as you type</li>
+    <li>- <b>Entropy Scoring</b> - Get instant entropy scores for your code modifications</li>
     <li>- <b>Security Detection</b> - Identify potential security vulnerabilities</li>
     <li>- <b>Code Quality Insights</b> - Receive suggestions for code improvements</li>
     <li>- <b>Inline Feedback</b> - See issues directly in your editor</li>
     <li>- <b>Comprehensive Reports</b> - Detailed analysis reports with findings</li>
     <li>- <b>Performance Analysis</b> - Detect performance bottlenecks and inefficiencies</li>
     <li>- <b>Best Practices</b> - Ensure adherence to coding standards</li>
-    </ul>
-
-    <h3>Experimental Features</h3>
-    <ul>
-    <li>- <b>Advanced AI Models</b> - Integration with latest AI analysis models</li>
-    <li>- <b>Custom Rules</b> - Define your own analysis rules</li>
-    <li>- <b>Team Analytics</b> - Aggregate analysis data across team members</li>
     </ul>
 
     <h3>Supported Technologies</h3>
@@ -74,9 +67,8 @@
     <ol>
     <li><b>Install the Plugin:</b> Install from JetBrains Marketplace</li>
     <li><b>Enable Analysis:</b> The plugin automatically starts analyzing your code changes</li>
-    <li><b>View Results:</b> Check the AI Code Risk tool window for analysis results</li>
+    <li><b>View Results:</b> Check the EntropyGuard tool window for analysis results</li>
     <li><b>Review Findings:</b> Click on issues to see detailed explanations and suggestions</li>
-    <li><b>Apply Fixes:</b> Use the provided quick-fixes to resolve identified issues</li>
     </ol>
 
     <h3>Technical Information</h3>
@@ -89,8 +81,8 @@
 
     <h3>Free vs Premium</h3>
     <ul>
-    <li><b>Free:</b> Basic risk analysis, security detection, code quality insights</li>
-    <li><b>Premium:</b> Advanced AI models, custom rules, team analytics, comprehensive reports, priority support</li>
+    <li><b>Free:</b> 7 day trial</li>
+    <li><b>Premium:</b> unlimited usage</li>
     </ul>
     ]]></description>
 
@@ -120,7 +112,7 @@
                 class="com.aicodequalityrisk.plugin.actions.AnalyzeCurrentFileAction"
                 text="Analyze Current File Risk"
                 description="Run AI code risk analysis on the current file"
-                icon="pluginIcon.svg">
+                icon="icons/pluginIcon_16.png">
             <add-to-group group-id="EditorPopupMenu" anchor="last"/>
         </action>
 
@@ -129,7 +121,7 @@
                 class="com.aicodequalityrisk.plugin.actions.AnalyzeProjectAction"
                 text="Analyze Project Risk"
                 description="Run comprehensive AI risk analysis on the entire project"
-                icon="pluginIcon.svg">
+                icon="icons/pluginIcon_16.png">
             <add-to-group group-id="ToolsMenu" anchor="last"/>
         </action>
     </actions>

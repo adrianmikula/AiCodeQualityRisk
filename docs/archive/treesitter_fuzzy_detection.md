@@ -2,7 +2,7 @@ Alright—brutal honesty, no hype.
 
 You’re trying to build:
 
-> **“Always-on, low-latency, low-memory fuzzy ‘AI slop’ detector inside IntelliJ”**
+> **“Always-on, low-latency, low-memory fuzzy ‘code entropy’ detector inside IntelliJ”**
 
 That’s a **hard systems problem**, not just a parsing problem.
 
@@ -93,7 +93,7 @@ You need to satisfy ALL of these:
 * Rule-based only
 * High false positives
 * Not AI-aware
-* Poor fuzzy detection
+* poor fuzzy detection of entropy patterns
 * Heavy / not incremental-friendly
 
 ## 🧠 Verdict
@@ -115,7 +115,7 @@ You need to satisfy ALL of these:
 * Totally irrelevant to:
 
   * duplication
-  * slop
+  * entropy
   * complexity
 
 ## 🧠 Verdict
@@ -361,7 +361,7 @@ With this architecture:
 
 But you CAN:
 
-> **Detect enough “suspicious similarity + slop signals” to be useful**
+> **Detect enough “suspicious similarity + entropy signals” to be useful**
 
 That’s what wins commercially.
 
