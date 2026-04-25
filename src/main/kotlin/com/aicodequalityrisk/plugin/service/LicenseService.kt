@@ -5,29 +5,20 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.extensions.PluginId
 import com.intellij.openapi.project.Project
+import com.intellij.ide.plugins.PluginManager
 
 @Service(Service.Level.PROJECT)
 open class LicenseService {
 
-    private var trialStartTime: Long = 0L
-    private var trialEndTime: Long = 0L
+    private val productCode = "PAICODEQUALITY"
 
     constructor()
 
-    constructor(trialStartTime: Long, trialEndTime: Long) {
-        this.trialStartTime = trialStartTime
-        this.trialEndTime = trialEndTime
-    }
-
     constructor(project: Project) {
-
+        // Marketplace API handles initialization
     }
 
-    fun startTrial() {
-        val trialDurationMillis = 14L * 24 * 60 * 60 * 1000 // 14 days
-        trialStartTime = System.currentTimeMillis()
-        trialEndTime = trialStartTime + trialDurationMillis
-    }
+    // Trial management handled by Marketplace through plugin.xml product-descriptor
 
     fun getLicenseStatus(): LicenseStatus {
         return try {
@@ -38,26 +29,23 @@ open class LicenseService {
     }
 
     private fun getLicenseStatusWithoutPluginCheck(): LicenseStatus {
-        if (trialStartTime > 0) {
-            val now = System.currentTimeMillis()
-            if (now < trialEndTime) {
-                return LicenseStatus.TRIAL
-            } else {
-                return LicenseStatus.TRIAL_EXPIRED
-            }
-        }
+        // Marketplace handles trial state through product-descriptor
+        // This fallback should not normally be reached
         return LicenseStatus.UNLICENSED
     }
 
     private fun checkTrialStatus(): LicenseStatus {
-        val pluginId = "PAICODEQUALITY"
-        val pluginManager = com.intellij.ide.plugins.PluginManager.getInstance()
-        val plugin = pluginManager.findEnabledPlugin(PluginId.getId(pluginId))
-        if (plugin != null && !plugin.isBundled) {
-            return LicenseStatus.LICENSED
+        val pluginManager = PluginManager.getInstance()
+        val plugin = pluginManager.findEnabledPlugin(PluginId.getId(productCode))
+        
+        return when {
+            plugin != null && !plugin.isBundled -> {
+                // Marketplace manages trial/paid status automatically
+                // For now, assume active if plugin is enabled and not bundled
+                LicenseStatus.LICENSED
+            }
+            else -> getLicenseStatusWithoutPluginCheck()
         }
-
-        return getLicenseStatusWithoutPluginCheck()
     }
 
     fun isPremium(): Boolean {
@@ -74,6 +62,12 @@ open class LicenseService {
     fun isLocked(): Boolean {
         val status = getLicenseStatus()
         return status == LicenseStatus.UNLICENSED || status == LicenseStatus.TRIAL_EXPIRED
+    }
+
+    fun startMarketplaceTrial() {
+        // Marketplace handles trial initiation through plugin.xml
+        // Users need to install from Marketplace to start trial
+        throw UnsupportedOperationException("Trial must be started through Marketplace installation")
     }
 
     fun getUpgradeUrl(): String = "https://plugins.jetbrains.com/plugin/31227-ai-code-quality-risk"

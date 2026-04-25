@@ -144,13 +144,9 @@ class RiskToolWindowPanel(private val project: Project) : JPanel(BorderLayout())
         licenseActionButton.addActionListener {
             val status = licenseService?.getLicenseStatus()
             if (status == LicenseStatus.UNLICENSED) {
-                licenseService?.startTrial()
-                updateLicenseBanner()
-                scorePanel.revalidate()
-                scorePanel.repaint()
-                licenseService?.let { service ->
-                    val store = AnalysisStateStore.getInstance(project)
-                    store.update(AnalysisViewState.Idle)
+                // Redirect to Marketplace for trial initiation
+                licenseService?.getUpgradeUrl()?.let { url ->
+                    BrowserUtil.browse(url)
                 }
             } else {
                 licenseService?.getUpgradeUrl()?.let { url ->
@@ -183,7 +179,7 @@ class RiskToolWindowPanel(private val project: Project) : JPanel(BorderLayout())
             if (isLocked) {
                 val status = licenseService?.getLicenseStatus()
                 val lockedMessage = when (status) {
-                    LicenseStatus.UNLICENSED -> "Click 'Start Free Trial' to see analysis"
+                    LicenseStatus.UNLICENSED -> "Install from Marketplace to start trial"
                     LicenseStatus.TRIAL_EXPIRED -> "Trial expired - Upgrade to unlock"
                     else -> "License required"
                 }
@@ -398,7 +394,7 @@ class RiskToolWindowPanel(private val project: Project) : JPanel(BorderLayout())
             }
             LicenseStatus.UNLICENSED -> {
                 licenseBanner.background = UIConfig.LICENSE_UNLICENSED_BG
-                licenseLabel.text = "Start Free Trial for Full Access"
+                licenseLabel.text = "Install from Marketplace for Free Trial"
                 licenseActionButton.text = "Start Free Trial"
                 scorePanel.remove(licenseBanner)
                 scorePanel.add(licenseBanner, 0)

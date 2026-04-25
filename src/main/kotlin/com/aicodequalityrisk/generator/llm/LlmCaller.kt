@@ -12,19 +12,22 @@ class LlmCaller(
     fun generate(prompt: String): String {
         repeat(maxRetries) { attempt ->
             try {
-                System.err.println("Calling LLM...")
+                System.err.println("Calling LLM (attempt ${attempt + 1}/$maxRetries)...")
                 val result = callOpenCode(prompt)
                 if (result.isNotBlank() && result.length > 50) {
-                    System.err.println("Success: ${result.length} chars")
+                    System.err.println("✅ LLM call successful: ${result.length} characters generated")
                     return result
                 }
-                System.err.println("Empty response")
+                System.err.println("⚠️  Empty or too short response received")
             } catch (e: Exception) {
-                System.err.println("Failed: ${e.message}")
+                System.err.println("❌ LLM call failed: ${e.message}")
             }
-            Thread.sleep(retryDelayMs)
+            if (attempt < maxRetries - 1) {
+                System.err.println("⏳ Waiting ${retryDelayMs}ms before retry...")
+                Thread.sleep(retryDelayMs)
+            }
         }
-        throw IllegalStateException("All attempts failed")
+        throw IllegalStateException("All $maxRetries LLM attempts failed")
     }
 
     private fun callOpenCode(prompt: String): String {
@@ -32,17 +35,40 @@ class LlmCaller(
         
         return try {
             if (isWindows) {
+                System.err.println("🔍 Windows detected - trying CLI tools in order...")
+                
                 // Try different CLI tools in order of preference
-                callAichatWindows(prompt) 
-                    ?: callLlmWindows(prompt)
-                    ?: callOllamaWindows(prompt)
-                    ?: callWindsurfWindows(prompt)
-                    ?: throw IllegalStateException("All CLI tools failed")
+                System.err.println("📱 Trying aichat...")
+                callAichatWindows(prompt)?.let { 
+                    System.err.println("✅ aichat successful")
+                    return@let it 
+                }
+                
+                System.err.println("📱 Trying llm...")
+                callLlmWindows(prompt)?.let { 
+                    System.err.println("✅ llm successful")
+                    return@let it 
+                }
+                
+                System.err.println("📱 Trying ollama...")
+                callOllamaWindows(prompt)?.let { 
+                    System.err.println("✅ ollama successful")
+                    return@let it 
+                }
+                
+                System.err.println("📱 Trying windsurf...")
+                callWindsurfWindows(prompt)?.let { 
+                    System.err.println("✅ windsurf successful")
+                    return@let it 
+                }
+                
+                throw IllegalStateException("All CLI tools failed")
             } else {
+                System.err.println("🐧 Linux detected - using opencode...")
                 callOpenCodeUnix(prompt)
             }
         } catch (e: Exception) {
-            System.err.println("CLI tool not available, using mock mode: ${e.message}")
+            System.err.println("⚠️  CLI tool not available, using mock mode: ${e.message}")
             callMockMode(prompt)
         }
     }
@@ -66,15 +92,18 @@ class LlmCaller(
             pb.directory(File(tempDir))
             pb.redirectErrorStream(true)
             
+            System.err.println("⚡ Executing aichat command...")
             val proc = pb.start()
             val output = proc.inputStream.bufferedReader().readText()
             val exitCode = proc.waitFor()
             
+            System.err.println("🔍 aichat exit code: $exitCode, output length: ${output.length}")
             if (exitCode == 0 && output.isNotBlank() && output.length > 50) {
                 return output
             }
             return null
         } catch (e: Exception) {
+            System.err.println("❌ aichat error: ${e.message}")
             return null
         } finally {
             promptFile.delete()
@@ -101,15 +130,18 @@ class LlmCaller(
             pb.directory(File(tempDir))
             pb.redirectErrorStream(true)
             
+            System.err.println("⚡ Executing llm command...")
             val proc = pb.start()
             val output = proc.inputStream.bufferedReader().readText()
             val exitCode = proc.waitFor()
             
+            System.err.println("🔍 llm exit code: $exitCode, output length: ${output.length}")
             if (exitCode == 0 && output.isNotBlank() && output.length > 50) {
                 return output
             }
             return null
         } catch (e: Exception) {
+            System.err.println("❌ llm error: ${e.message}")
             return null
         } finally {
             promptFile.delete()
@@ -136,15 +168,18 @@ class LlmCaller(
             pb.directory(File(tempDir))
             pb.redirectErrorStream(true)
             
+            System.err.println("⚡ Executing ollama command...")
             val proc = pb.start()
             val output = proc.inputStream.bufferedReader().readText()
             val exitCode = proc.waitFor()
             
+            System.err.println("🔍 ollama exit code: $exitCode, output length: ${output.length}")
             if (exitCode == 0 && output.isNotBlank() && output.length > 50) {
                 return output
             }
             return null
         } catch (e: Exception) {
+            System.err.println("❌ ollama error: ${e.message}")
             return null
         } finally {
             promptFile.delete()
@@ -172,10 +207,12 @@ class LlmCaller(
             pb.directory(File(tempDir))
             pb.redirectErrorStream(true)
             
+            System.err.println("⚡ Executing windsurf command...")
             val proc = pb.start()
             val output = proc.inputStream.bufferedReader().readText()
             val exitCode = proc.waitFor()
             
+            System.err.println("🔍 windsurf exit code: $exitCode, output length: ${output.length}")
             if (exitCode != 0) {
                 throw IllegalStateException("Windsurf call failed with exit code $exitCode: $output")
             }
@@ -185,6 +222,9 @@ class LlmCaller(
             }
             
             return output
+        } catch (e: Exception) {
+            System.err.println("❌ windsurf error: ${e.message}")
+            throw e
         } finally {
             promptFile.delete()
             script.delete()
@@ -211,10 +251,12 @@ class LlmCaller(
             pb.directory(File(tempDir))
             pb.redirectErrorStream(true)
             
+            System.err.println("⚡ Executing opencode command...")
             val proc = pb.start()
             val output = proc.inputStream.bufferedReader().readText()
             val exitCode = proc.waitFor()
             
+            System.err.println("🔍 opencode exit code: $exitCode, output length: ${output.length}")
             if (exitCode != 0) {
                 throw IllegalStateException("LLM call failed with exit code $exitCode: $output")
             }
@@ -224,23 +266,31 @@ class LlmCaller(
             }
             
             return output
+        } catch (e: Exception) {
+            System.err.println("❌ opencode error: ${e.message}")
+            throw e
         } finally {
             script.delete()
         }
     }
     
     private fun callMockMode(prompt: String): String {
+        System.err.println("🎭 Using mock mode - generating realistic AI response...")
+        
         // Simulate some processing time
         Thread.sleep(1000)
         
         // Generate varied responses based on prompt content to simulate different AI outputs
-        return when {
+        val response = when {
             prompt.contains("ITERATIVE") -> generateIterativeResponse()
             prompt.contains("authentication") -> generateAuthResponse()
             prompt.contains("validation") -> generateValidationResponse()
             prompt.contains("caching") -> generateCachingResponse()
             else -> generateBasicCrudResponse()
         }
+        
+        System.err.println("✅ Mock mode generated ${response.length} characters")
+        return response
     }
     
     private fun generateBasicCrudResponse(): String {
