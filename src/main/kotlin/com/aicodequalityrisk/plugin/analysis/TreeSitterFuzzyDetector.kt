@@ -10,6 +10,9 @@ class TreeSitterFuzzyDetector {
     private val parser = TSParser().apply {
         setLanguage(TreeSitterJava())
     }
+    private val thresholdCalculator = AdaptiveThresholdCalculator()
+    private val shingleBuilder = MultiGranularShingleBuilder()
+    private val entropyCalculator = EntropyScoreCalculator()
 
     fun detect(code: String, filePath: String?): FuzzyMetrics {
         logger.debug("Tree-sitter fuzzy detect invoked for $filePath")
@@ -17,7 +20,7 @@ class TreeSitterFuzzyDetector {
 
         return try {
             val tree = parser.parseString(null, code)
-            val metrics = analyzeTree(tree.rootNode, code)
+            val metrics = analyzeTree(tree.rootNode, code, filePath)
             if (metrics.duplicateMethodCount > 0) {
                 logger.debug("Fuzzy detector found ${metrics.duplicateMethodCount} duplicate method pairs for $filePath")
             }
@@ -34,26 +37,29 @@ class TreeSitterFuzzyDetector {
     }
 
 
-    private fun analyzeTree(root: TSNode, source: String): FuzzyMetrics {
+    private fun analyzeTree(root: TSNode, source: String, filePath: String?): FuzzyMetrics {
         val methods = collectMethodNodes(root)
-        if (methods.size < 2) return FuzzyMetrics()
+        val entropyScores = entropyCalculator.calculateEntropyScores(methods, root, source)
 
-        val fingerprints = methods.map { node ->
-            MethodFingerprint(
-                name = extractMethodName(node, source),
-                shingles = buildShingles(normalizeNodeTokens(node, source))
-            )
+        val enhancedFingerprints = methods.map { node ->
+            createEnhancedFingerprint(node, source)
         }
 
-        val similarPairs = fingerprints.flatMapIndexed { index, fingerprint ->
-            (index + 1 until fingerprints.size).mapNotNull { otherIndex ->
-                val other = fingerprints[otherIndex]
-                val similarity = jaccardSimilarity(fingerprint.shingles, other.shingles)
-                if (similarity >= DUPLICATE_THRESHOLD) {
+        val similarPairs = enhancedFingerprints.flatMapIndexed { index, fingerprint ->
+            (index + 1 until enhancedFingerprints.size).mapNotNull { otherIndex ->
+                val other = enhancedFingerprints[otherIndex]
+                val adaptiveThreshold = thresholdCalculator.calculateThreshold(
+                    fingerprint, other, filePath
+                )
+                val similarity = fingerprint.getSimilarityScore(other)
+
+                if (similarity >= adaptiveThreshold) {
                     MethodSimilarityPair(
                         firstMethod = fingerprint.name,
                         secondMethod = other.name,
-                        similarity = similarity
+                        similarity = similarity,
+                        threshold = adaptiveThreshold,
+                        shingleBreakdown = createShingleBreakdown(fingerprint, other)
                     )
                 } else {
                     null
@@ -64,7 +70,16 @@ class TreeSitterFuzzyDetector {
         return FuzzyMetrics(
             duplicateMethodCount = similarPairs.size,
             maxSimilarityScore = similarPairs.maxOfOrNull { it.similarity } ?: 0.0,
-            duplicateMethodPairs = similarPairs
+            duplicateMethodPairs = similarPairs,
+            adaptiveThresholdsEnabled = true,
+            multiGranularShinglingEnabled = true,
+            entropyScoresEnabled = true,
+            boilerplateBloatScore = entropyScores.boilerplateBloatScore,
+            verboseCommentScore = entropyScores.verboseCommentScore,
+            overDefensiveScore = entropyScores.overDefensiveScore,
+            poorNamingScore = entropyScores.poorNamingScore,
+            frameworkMisuseScore = entropyScores.frameworkMisuseScore,
+            excessiveDocumentationScore = entropyScores.excessiveDocumentationScore
         )
     }
 
@@ -111,9 +126,64 @@ class TreeSitterFuzzyDetector {
         }
     }
 
-    private fun buildShingles(tokens: List<String>, size: Int = 4): Set<String> {
-        if (tokens.size < size) return tokens.toSet()
-        return tokens.windowed(size) { it.joinToString(" ") }.toSet()
+    private fun createEnhancedFingerprint(node: TSNode, source: String): EnhancedMethodFingerprint {
+        val name = extractMethodName(node, source)
+        val tokens = normalizeNodeTokens(node, source)
+        val shingles = shingleBuilder.buildMultiGranularShingles(tokens)
+        val methodLength = calculateMethodLength(node, source)
+        val complexity = calculateMethodComplexity(node, source)
+
+        return EnhancedMethodFingerprint(
+            name = name,
+            shingles = shingles,
+            methodLength = methodLength,
+            complexity = complexity,
+            tokenCount = tokens.size,
+            uniqueTokenCount = tokens.toSet().size
+        )
+    }
+
+    private fun calculateMethodLength(node: TSNode, source: String): Int {
+        val methodText = extractText(node, source)
+        return methodText.lines().count { it.isNotBlank() }
+    }
+
+    private fun calculateMethodComplexity(node: TSNode, source: String): Int {
+        val methodText = extractText(node, source)
+        var complexity = 1
+
+        complexity += countOccurrences(methodText, "if")
+        complexity += countOccurrences(methodText, "for")
+        complexity += countOccurrences(methodText, "while")
+        complexity += countOccurrences(methodText, "catch")
+        complexity += countOccurrences(methodText, "case")
+        complexity += countOccurrences(methodText, "&&")
+        complexity += countOccurrences(methodText, "||")
+        complexity += countOccurrences(methodText, "?")
+
+        return complexity
+    }
+
+    private fun countOccurrences(text: String, pattern: String): Int {
+        return text.split(pattern).size - 1
+    }
+
+    private fun createShingleBreakdown(
+        fp1: EnhancedMethodFingerprint,
+        fp2: EnhancedMethodFingerprint
+    ): ShingleBreakdown {
+        val breakdown = mutableMapOf<Int, Double>()
+        val shingleSizes = listOf(2, 4, 6, 8)
+
+        for (size in shingleSizes) {
+            val similarity = jaccardSimilarity(
+                fp1.shingles[size] ?: emptySet(),
+                fp2.shingles[size] ?: emptySet()
+            )
+            breakdown[size] = similarity
+        }
+
+        return ShingleBreakdown(breakdown)
     }
 
     private fun jaccardSimilarity(first: Set<String>, second: Set<String>): Double {
@@ -129,13 +199,7 @@ class TreeSitterFuzzyDetector {
         return source.substring(start, end)
     }
 
-    private data class MethodFingerprint(
-        val name: String,
-        val shingles: Set<String>
-    )
-
     companion object {
-        private const val DUPLICATE_THRESHOLD = 0.62
         private val METHOD_NAME_REGEX = Regex("\\b([A-Za-z_][A-Za-z0-9_]*)\\s*\\(")
     }
 }
