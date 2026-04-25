@@ -80,7 +80,7 @@ data class RiskResult(
                     (item as? Map<*, *>)?.let { parseFinding(it) }
                 } ?: emptyList(),
                 explanations = (map["explanations"] as? List<*>)?.mapNotNull { it as? String } ?: emptyList(),
-                sourceFilePath = map["sourceFilePath"] as? String,
+                sourceFilePath = if (map["sourceFilePath"] == "NULL_MARKER") null else map["sourceFilePath"] as? String,
                 timestamp = (map["timestamp"] as? Double)?.toLong() ?: 0L
             )
         }
@@ -91,7 +91,7 @@ data class RiskResult(
                 detail = map["detail"] as? String ?: "",
                 severity = Severity.valueOf(map["severity"] as? String ?: "LOW"),
                 category = try { com.aicodequalityrisk.plugin.analysis.Category.valueOf(map["category"] as? String ?: "COMPLEXITY") } catch (e: Exception) { com.aicodequalityrisk.plugin.analysis.Category.COMPLEXITY },
-                filePath = map["filePath"] as? String,
+                filePath = if (map["filePath"] == "NULL_MARKER") null else map["filePath"] as? String,
                 lineNumber = (map["lineNumber"] as? Double)?.toInt()
             )
         }
@@ -128,7 +128,7 @@ data class RiskResult(
                             } else i++
                         }
                         if (i < json.length) i++
-                        return result.apply { for ((k, v) in map) put(k, v) }.also { result.clear(); result.putAll(it as Map<String, Any>) }
+                        return map
                     }
                     json[i] == '[' -> {
                         val list = mutableListOf<Any>()
@@ -155,7 +155,7 @@ data class RiskResult(
                     }
                     json[i] == 't' && json.substring(i, i + 4) == "true" -> { i += 4; return true }
                     json[i] == 'f' && json.substring(i, i + 5) == "false" -> { i += 5; return false }
-                    json[i] == 'n' && json.substring(i, i + 4) == "null" -> { i += 4; return "null" }
+                    json[i] == 'n' && json.substring(i, i + 4) == "null" -> { i += 4; return "NULL_MARKER" }
                     else -> {
                         val num = buildString {
                             while (i < json.length && (json[i].isDigit() || json[i] == '.' || json[i] == '-')) append(json[i++])

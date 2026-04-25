@@ -4,7 +4,7 @@ import kotlin.test.Test
 import kotlin.test.assertTrue
 import kotlin.test.assertEquals
 
-class AiCodeSlopPatternsTest {
+class CodeEntropyPatternsTest {
     private val analyzer = ASTAnalyzer()
 
     @Test

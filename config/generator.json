@@ -10,9 +10,40 @@
       "domain": "Task Management",
       "architecture": "Spring Boot REST API",
       "features": ["CRUD operations", "H2 database", "JPA"],
-      "iterationFeatures": []
+      "iterationFeatures": [
+        "Add user authentication and authorization",
+        "Add data validation for all inputs",
+        "Add logging for all service methods",
+        "Add exception handling for database operations",
+        "Add caching for frequently accessed data",
+        "Add pagination to list endpoints",
+        "Add sorting capabilities to list endpoints",
+        "Add export functionality for reports",
+        "Add notification system for task updates",
+        "Add audit trail for all changes",
+        "Add file upload/download for task attachments",
+        "Add bulk operations support",
+        "Add search functionality with filters",
+        "Add real-time updates using WebSockets",
+        "Add API rate limiting",
+        "Add scheduled tasks for cleanup",
+        "Add metrics and health endpoints",
+        "Add multi-tenancy support",
+        "Add soft delete functionality",
+        "Add versioning for audit trail",
+        "Add integration with external calendar",
+        "Add email notifications",
+        "Add advanced reporting dashboard",
+        "Add activity feed",
+        "Add tagging system",
+        "Add commenting on tasks",
+        "Add file versioning",
+        "Add backup and restore",
+        "Add data migration scripts",
+        "Add custom fields support"
+      ]
     }
   ],
-  "modes": ["SINGLE_SHOT"],
-  "variationsPerPrompt": 1
+  "modes": ["SINGLE_SHOT", "ITERATIVE"],
+  "variationsPerPrompt": 10
 }

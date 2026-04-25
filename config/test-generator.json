@@ -1,0 +1,20 @@
+{
+  "name": "test-ai-code-quality",
+  "outputDir": "workspace/test-generated",
+  "model": "claude-3.5-sonnet",
+  "maxRetries": 2,
+  "retryDelayMs": 2000,
+  "promptTemplates": [
+    {
+      "name": "simple_crud",
+      "domain": "Task Management",
+      "architecture": "Spring Boot REST API",
+      "features": ["CRUD operations", "H2 database", "JPA"],
+      "iterationFeatures": [
+        "Add user authentication"
+      ]
+    }
+  ],
+  "modes": ["SINGLE_SHOT"],
+  "variationsPerPrompt": 1
+}
