@@ -127,6 +127,14 @@
     </actions>
 
     <change-notes><![CDATA[
+    <h>1.0.3 - 2026-04-25</h>
+    <ul>
+        <li>Renamed plugin to EntropyGuard</li>
+        <li>Added new improved icon</li>
+        <li>Fixed licensing to correctly use IntelliJ Marketplace Trial API</li>
+        <li>Fixed code generator compilation issues</li>
+        <li>Added support for aichat, llm, and ollama CLI tools</li>
+    </ul>
     <h>1.0.2 - 2026-04-17</h>
     <ul>
         <li>Disabled MCP server (temporarily)</li>
