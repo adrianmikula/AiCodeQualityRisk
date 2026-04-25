@@ -1,5 +1,5 @@
 [tools]
-gradle = "9.0"
+gradle = "8.5.0"
 
 [tasks.build]
 description = "Build the project (compile + test)"

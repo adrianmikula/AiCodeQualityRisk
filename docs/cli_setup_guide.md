@@ -7,7 +7,8 @@ This guide explains how to set up CLI tools for the AI code generation case stud
 The generator supports multiple CLI tools with automatic fallback to mock mode:
 
 ### Windows Support
-- **Primary**: Windsurf CLI (`windsurf.cmd chat`)
+- **Primary**: aichat via nvm-windows (multiple LLM providers)
+- **Secondary**: Ollama (local models, completely free)
 - **Fallback**: Mock mode with realistic code generation
 
 ### Linux Support  
@@ -16,39 +17,127 @@ The generator supports multiple CLI tools with automatic fallback to mock mode:
 
 ## Setup Requirements
 
-### Option 1: Install OpenAI CLI (Recommended for Windows)
-```bash
-# Install OpenAI CLI
-npm install -g @openai/opeai
+**Two fully-supported approaches:**
 
-# Set up API key
-export OPENAI_API_KEY="your-api-key-here"
+1. **NVM-Windows + aichat** (Recommended) - Node.js-based, multiple LLM providers
+2. **Ollama** (Local) - Completely free, runs locally, no API keys
 
-# Test
-openai api chat.create -m "Generate a simple Java class"
+Choose based on your preference:
+- **Want multiple LLM options?** → Use Approach 1 (nvm-windows + aichat)
+- **Want completely local/ free?** → Use Approach 2 (ollama)
+
+---
+
+### 🎯 Supported CLI Tools for Windows
+
+### 1. **aichat** (Recommended)
+
+#### Setup via NVM-Windows
+The cleanest way to install aichat on Windows with proper PATH management.
+
+```powershell
+# 1. Install nvm-windows
+winget install CoreyButler.NVMforWindows
+
+# 2. IMPORTANT: Close and reopen PowerShell to reload PATH
+#    (nvm-windows changes system PATH, needs new shell session)
+
+# 3. Verify nvm works in new session
+nvm version
+
+# 4. Install Node.js LTS
+nvm install 20.11.0
+nvm use 20.11.0
+
+# 5. Install aichat (PATH works automatically with nvm)
+npm install -g aichat
+
+# 6. Verify (if this fails, restart PowerShell again)
+aichat --version
 ```
 
-### Option 2: Install Anthropic CLI (Alternative)
-```bash
-# Install Anthropic CLI
-npm install -g @anthropic-ai/cli
+**⚠️ Critical:** Always restart PowerShell after installing nvm-windows so PATH changes take effect.
 
-# Set up API key  
-export ANTHROPIC_API_KEY="your-api-key-here"
+```powershell
+# 7. Configure for free providers
+aichat --set-provider ollama  # For local models
+# OR
+aichat --set-provider groq    # For free API
 
-# Test
-anthropic messages create -m "Generate a simple Java class"
+# 8. Test
+aichat "Generate a simple Java class"
 ```
 
-### Option 3: Configure Windsurf for Programmatic Use
-Windsurf is primarily a GUI editor, but you can try:
+**Why NVM-Windows:**
+- ✅ Clean PATH management (no manual editing)
+- ✅ Global packages work immediately
+- ✅ No environment variable issues
+- ✅ Easy Node.js version switching
 
-```bash
-# Try different modes
-windsurf.cmd chat -m ask "your prompt"
-windsurf.cmd chat -m edit "your prompt" 
-windsurf.cmd chat -m agent "your prompt"
+**Why it's great:**
+- ✅ Windows binaries available
+- ✅ Supports 20+ LLM providers
+- ✅ Works with free APIs (Groq, Ollama, OpenRouter)
+- ✅ Unified interface across providers
+- ✅ No vendor lock-in
+- ✅ **Already integrated in LlmCaller**
+
+### 2. **Ollama** (Local Models - Approach 2)
+
+#### Windows Setup
+```powershell
+# Download and install Ollama for Windows
+# Option 1: Download installer from https://ollama.com/download
+# Option 2: Use winget (Windows Package Manager)
+winget install Ollama.Ollama
+
+# Verify installation
+ollama --version
+
+# Pull free models (choose based on your hardware)
+ollama pull llama2          # General purpose
+ollama pull codellama       # Code-focused
+ollama pull mistral         # Efficient and capable
+ollama pull llama2:7b       # Smaller, faster model
+
+# Test with a simple prompt
+ollama run llama2 "Generate a simple Java Spring Boot REST API with CRUD operations"
 ```
+
+**Prerequisites:**
+- Windows 10/11 with WSL2 or native Windows support
+- Sufficient RAM (8GB+ recommended, 16GB+ for larger models)
+- GPU optional but recommended for faster inference
+
+**Hardware Requirements:**
+- **7B models**: 8GB RAM minimum
+- **13B models**: 16GB RAM minimum  
+- **33B+ models**: 32GB+ RAM recommended
+
+**Why it's perfect:**
+- ✅ Completely free (runs locally)
+- ✅ No API keys needed
+- ✅ Multiple code-focused models available
+- ✅ Windows native support
+- ✅ **Already integrated in LlmCaller**
+
+## 🔧 Generator Integration Status
+
+**Recommended setup priority:**
+
+1. **NVM-Windows + aichat** (Best for most users)
+2. **Ollama** (Best for completely free/local execution)
+
+**Automatic Detection Order:**
+```
+aichat → ollama → mock mode
+```
+
+**Features:**
+- ✅ **Tries multiple tools** automatically if one fails
+- ✅ **Fallback to mock mode** if no CLI tools available
+- ✅ **Progress feedback** shows which tool is being tried
+- ✅ **Cross-platform**: Windows (nvm-based tools, ollama) and Linux (opencode)
 
 ## Configuration Updates Needed
 
@@ -71,9 +160,12 @@ The current implementation automatically detects CLI tools and falls back to moc
 ## Testing Setup
 
 1. **Test CLI tool availability**:
-   ```bash
-   # Windows
-   windsurf.cmd --help
+   ```powershell
+   # Windows - Test aichat
+   aichat --version
+   
+   # Windows - Test Ollama (alternative)
+   ollama --version
    
    # Linux  
    opencode --help

@@ -56,13 +56,7 @@ class LlmCaller(
                     return@let it 
                 }
                 
-                System.err.println("📱 Trying windsurf...")
-                callWindsurfWindows(prompt)?.let { 
-                    System.err.println("✅ windsurf successful")
-                    return@let it 
-                }
-                
-                throw IllegalStateException("All CLI tools failed")
+                throw IllegalStateException("All CLI tools failed (tried: aichat, llm, ollama)")
             } else {
                 System.err.println("🐧 Linux detected - using opencode...")
                 callOpenCodeUnix(prompt)
@@ -181,50 +175,6 @@ class LlmCaller(
         } catch (e: Exception) {
             System.err.println("❌ ollama error: ${e.message}")
             return null
-        } finally {
-            promptFile.delete()
-            script.delete()
-        }
-    }
-    
-    private fun callWindsurfWindows(prompt: String): String {
-        val tempDir = System.getProperty("java.io.tmpdir")
-        val promptFile = File.createTempFile("prompt_", ".txt", File(tempDir))
-        val script = File.createTempFile("call_surf_", ".bat", File(tempDir))
-        
-        try {
-            // Write prompt to temp file to avoid shell escaping issues
-            promptFile.writeText(prompt)
-            
-            script.writeText("""
-                @echo off
-                cd /d "$tempDir"
-                windsurf.cmd chat -m ask -- @"${promptFile.name}"
-            """.trimIndent())
-            
-            val pb = ProcessBuilder()
-            pb.command("cmd", "/c", script.absolutePath)
-            pb.directory(File(tempDir))
-            pb.redirectErrorStream(true)
-            
-            System.err.println("⚡ Executing windsurf command...")
-            val proc = pb.start()
-            val output = proc.inputStream.bufferedReader().readText()
-            val exitCode = proc.waitFor()
-            
-            System.err.println("🔍 windsurf exit code: $exitCode, output length: ${output.length}")
-            if (exitCode != 0) {
-                throw IllegalStateException("Windsurf call failed with exit code $exitCode: $output")
-            }
-            
-            if (output.isBlank() || output.length < 50) {
-                throw IllegalStateException("Windsurf returned empty or too short response")
-            }
-            
-            return output
-        } catch (e: Exception) {
-            System.err.println("❌ windsurf error: ${e.message}")
-            throw e
         } finally {
             promptFile.delete()
             script.delete()
