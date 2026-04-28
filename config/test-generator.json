@@ -11,10 +11,11 @@
       "architecture": "Spring Boot REST API",
       "features": ["CRUD operations", "H2 database", "JPA"],
       "iterationFeatures": [
-        "Add user authentication"
+        "Add user authentication",
+        "Add input validation"
       ]
     }
   ],
-  "modes": ["SINGLE_SHOT"],
+  "modes": ["ITERATIVE"],
   "variationsPerPrompt": 1
 }

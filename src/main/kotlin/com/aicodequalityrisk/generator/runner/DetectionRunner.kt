@@ -6,6 +6,8 @@ import com.github.javaparser.ast.body.MethodDeclaration
 import com.github.javaparser.ast.expr.StringLiteralExpr
 import java.nio.file.Path
 import java.nio.file.Files
+import java.time.LocalTime
+import java.time.format.DateTimeFormatter
 import kotlin.math.max
 
 data class DetectionResult(
@@ -19,11 +21,19 @@ data class DetectionResult(
 
 class DetectionRunner {
     private val javaParser = JavaParser()
+    private val timeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss")
+    
+    private fun logProgress(stage: String, message: String) {
+        val timestamp = LocalTime.now().format(timeFormatter)
+        println("[$timestamp] [$stage] $message")
+    }
 
     fun analyze(projectPath: Path): DetectionResult {
+        logProgress("ANALYZE", "      Scanning for Java files...")
         val javaFiles = Files.walk(projectPath)
             .filter { it.toString().endsWith(".java") }
             .toList()
+        logProgress("ANALYZE", "      Found ${javaFiles.size} Java files to analyze")
 
         var totalDuplicateStrings = 0
         var totalDuplicateNumbers = 0
@@ -33,25 +43,32 @@ class DetectionRunner {
         var allMethods = mutableListOf<MethodInfoData>()
         var similarPairs = emptyList<SimilarPair>()
 
-        javaFiles.forEach { file ->
+        javaFiles.forEachIndexed { idx, file ->
+            logProgress("ANALYZE", "      Parsing file ${idx + 1}/${javaFiles.size}: ${file.fileName}")
             val code = Files.readString(file)
             try {
-                val cu = javaParser.parse(code).result.orElse(null) ?: return@forEach
+                val cu = javaParser.parse(code).result.orElse(null) ?: return@forEachIndexed
                 val metrics = analyzeFile(cu)
                 totalDuplicateStrings += metrics.duplicateStrings
                 totalDuplicateNumbers += metrics.duplicateNumbers
                 totalDuplicateMethodCalls += metrics.duplicateMethodCalls
                 totalLoc += metrics.loc
                 allMethods.addAll(metrics.methods)
+                logProgress("ANALYZE", "        - LOC: ${metrics.loc}, Methods: ${metrics.methods.size}, Dup strings: ${metrics.duplicateStrings}, Dup nums: ${metrics.duplicateNumbers}")
             } catch (e: Exception) {
-                System.err.println("Failed to parse $file: ${e.message}")
+                logProgress("ERROR", "        Failed to parse: ${e.message}")
             }
         }
 
+        logProgress("ANALYZE", "      Total methods found: ${allMethods.size}")
         if (allMethods.size >= 2) {
+            logProgress("ANALYZE", "      Computing method similarities...")
             similarPairs = findSimilarMethods(allMethods)
             if (similarPairs.isNotEmpty()) {
                 maxSimilarity = similarPairs.maxOfOrNull { it.similarity } ?: 0.0
+                logProgress("ANALYZE", "      Found ${similarPairs.size} similar method pairs (max similarity: ${String.format("%.2f", maxSimilarity)})")
+            } else {
+                logProgress("ANALYZE", "      No similar methods found")
             }
         }
 
@@ -124,7 +141,7 @@ class DetectionRunner {
     private fun normalizeMethodBody(method: MethodDeclaration): String {
         return method.toString()
             .replace(Regex("\"[^\"]*\""), "\"\"")
-            .replace(Regex("\\b\\d+\\"), "0")
+            .replace(Regex("\\b\\d+"), "0")
             .replace(Regex("//.*"), "")
             .replace(Regex("/\\*.*?\\*/"), "")
             .replace(Regex("\\s+"), " ")

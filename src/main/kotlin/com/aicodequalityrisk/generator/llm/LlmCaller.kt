@@ -3,6 +3,16 @@ package com.aicodequalityrisk.generator.llm
 import java.io.File
 import java.io.BufferedReader
 import java.io.InputStreamReader
+import java.net.HttpURLConnection
+import java.net.URL
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.buildJsonArray
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonPrimitive
 
 class LlmCaller(
     private val model: String = "claude-3.5-sonnet",
@@ -31,13 +41,20 @@ class LlmCaller(
     }
 
     private fun callOpenCode(prompt: String): String {
+        // Force mock mode for faster testing
+        val forceMock = System.getProperty("force.mock.mode", "false").toBoolean()
+        if (forceMock) {
+            System.err.println("🎭 Force mock mode enabled")
+            return callMockMode(prompt)
+        }
+        
         val isWindows = System.getProperty("os.name").lowercase().contains("windows")
         
         return try {
             if (isWindows) {
-                System.err.println("🔍 Windows detected - trying CLI tools in order...")
+                System.err.println("� Windows detected - trying CLI tools in order...")
                 
-                // Try different CLI tools in order of preference
+                // Try aichat first (fastest, working)
                 System.err.println("📱 Trying aichat...")
                 callAichatWindows(prompt)?.let { 
                     System.err.println("✅ aichat successful")
@@ -56,13 +73,20 @@ class LlmCaller(
                     return@let it 
                 }
                 
-                throw IllegalStateException("All CLI tools failed (tried: aichat, llm, ollama)")
+                // Try LM Studio as fallback
+                System.err.println("�️  Trying LM Studio with qwen2.5-coder-14b...")
+                callLmStudio(prompt)?.let {
+                    System.err.println("✅ LM Studio successful")
+                    return@let it
+                }
+                
+                throw IllegalStateException("All tools failed (tried: aichat, llm, ollama, lmstudio)")
             } else {
                 System.err.println("🐧 Linux detected - using opencode...")
                 callOpenCodeUnix(prompt)
             }
         } catch (e: Exception) {
-            System.err.println("⚠️  CLI tool not available, using mock mode: ${e.message}")
+            System.err.println("⚠️  All LLM tools failed, using mock mode: ${e.message}")
             callMockMode(prompt)
         }
     }
@@ -78,7 +102,7 @@ class LlmCaller(
             script.writeText("""
                 @echo off
                 cd /d "$tempDir"
-                aichat @"${promptFile.name}"
+                type "${promptFile.name}" | aichat --no-stream --prompt -
             """.trimIndent())
             
             val pb = ProcessBuilder()
@@ -178,6 +202,74 @@ class LlmCaller(
         } finally {
             promptFile.delete()
             script.delete()
+        }
+    }
+    
+    private fun callLmStudio(prompt: String): String? {
+        val lmStudioUrl = System.getProperty("lmstudio.url", "http://localhost:1234")
+        val apiUrl = "$lmStudioUrl/v1/chat/completions"
+        
+        try {
+            System.err.println("⚡ Calling LM Studio API at $apiUrl...")
+            
+            val json = Json { ignoreUnknownKeys = true }
+            
+            // Build the request body
+            val requestBody = buildJsonObject {
+                put("model", JsonPrimitive("qwen/qwen2.5-coder-14b"))
+                put("messages", kotlinx.serialization.json.buildJsonArray {
+                    add(buildJsonObject {
+                        put("role", JsonPrimitive("system"))
+                        put("content", JsonPrimitive("You are a helpful coding assistant. Generate complete, working Java Spring Boot code. Output files in the format: <file path=\"src/main/java/...\">...</file>"))
+                    })
+                    add(buildJsonObject {
+                        put("role", JsonPrimitive("user"))
+                        put("content", JsonPrimitive(prompt))
+                    })
+                })
+                put("temperature", JsonPrimitive(0.7))
+                put("max_tokens", JsonPrimitive(2048))
+            }
+            
+            val requestBodyString = json.encodeToString(JsonObject.serializer(), requestBody)
+            
+            val url = URL(apiUrl)
+            val conn = url.openConnection() as HttpURLConnection
+            conn.requestMethod = "POST"
+            conn.setRequestProperty("Content-Type", "application/json")
+            conn.doOutput = true
+            conn.connectTimeout = 30000
+            conn.readTimeout = 300000
+            
+            conn.outputStream.use { os ->
+                os.write(requestBodyString.toByteArray(Charsets.UTF_8))
+            }
+            
+            val responseCode = conn.responseCode
+            System.err.println("🔍 LM Studio response code: $responseCode")
+            
+            if (responseCode == 200) {
+                val response = conn.inputStream.bufferedReader().use { it.readText() }
+                System.err.println("🔍 LM Studio response length: ${response.length}")
+                
+                // Parse the response
+                val responseJson = json.parseToJsonElement(response).jsonObject
+                val choices = responseJson["choices"]?.jsonArray
+                val content = choices?.get(0)?.jsonObject?.get("message")?.jsonObject?.get("content")?.jsonPrimitive?.content
+                
+                if (content != null && content.isNotBlank() && content.length > 50) {
+                    System.err.println("✅ LM Studio returned ${content.length} characters")
+                    return content
+                }
+            } else {
+                val error = conn.errorStream?.bufferedReader()?.use { it.readText() } ?: "Unknown error"
+                System.err.println("❌ LM Studio error: $error")
+            }
+            
+            return null
+        } catch (e: Exception) {
+            System.err.println("❌ LM Studio error: ${e.message}")
+            return null
         }
     }
     

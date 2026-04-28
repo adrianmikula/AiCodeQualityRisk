@@ -56,6 +56,11 @@ tasks {
         sinceBuild.set(providers.gradleProperty("intellij.sinceBuild").orElse("242"))
         untilBuild.set(providers.gradleProperty("intellij.untilBuild").let { provider { null } })
     }
+    
+    run<JavaExec> {
+        // Disable mock mode to use real LLM (Ollama)
+        jvmArgs("-Dforce.mock.mode=false")
+    }
 }
 
 application {
