@@ -61,15 +61,16 @@ class PluginStartupActivity : ProjectActivity {
             fire(TriggerType.FOCUS)
         }
 
-        // Register the "AI Code Risk" tool window programmatically without using ToolWindowFactory
+        // Register the "EntropyGuard" tool window programmatically without using ToolWindowFactory
         ApplicationManager.getApplication().invokeLater {
             val toolWindowManager = ToolWindowManager.getInstance(project)
-            val existingToolWindow = toolWindowManager.getToolWindow("AI Code Risk")
+            val existingToolWindow = toolWindowManager.getToolWindow("EntropyGuard")
             if (existingToolWindow == null) {
                 // Create tool window using the non-deprecated RegisterToolWindowTask API
+                // Icon will be loaded automatically via New UI icon mapping
                 val toolWindow = toolWindowManager.registerToolWindow(
                     RegisterToolWindowTask.notClosable(
-                        id = "AI Code Risk",
+                        id = "EntropyGuard",
                         anchor = ToolWindowAnchor.RIGHT
                     )
                 )

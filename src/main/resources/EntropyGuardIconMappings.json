@@ -1,0 +1,20 @@
+{
+  "iconMappings": [
+    {
+      "iconId": "/icons/pluginIcon.svg",
+      "iconPath": "/icons/expui/pluginIcon.svg"
+    },
+    {
+      "iconId": "/icons/pluginIcon_16.png",
+      "iconPath": "/icons/expui/pluginIcon.svg"
+    },
+    {
+      "iconId": "/icons/pluginIcon_13.png",
+      "iconPath": "/icons/expui/pluginIcon.svg"
+    },
+    {
+      "iconId": "/icons/pluginIcon_monochrome.svg",
+      "iconPath": "/icons/expui/pluginIcon.svg"
+    }
+  ]
+}

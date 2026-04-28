@@ -1,4 +1,4 @@
-<svg version="1.1" xmlns="http://www.w3.org/2000/svg" style="display: block;" viewBox="0 0 2048 2048" width="1024" height="1024" preserveAspectRatio="none">
+<svg version="1.1" xmlns="http://www.w3.org/2000/svg" style="display: block;" viewBox="0 0 2048 2048" width="40" height="40" preserveAspectRatio="xMidYMid meet">
 <defs>
 	<linearGradient id="Gradient1" gradientUnits="userSpaceOnUse" x1="745.565" y1="1131.08" x2="948.301" y2="1008.43">
 		<stop class="stop0" offset="0" stop-opacity="1" stop-color="rgb(207,49,29)"/>

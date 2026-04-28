@@ -17,7 +17,7 @@ repositories {
 
 intellijPlatform {
     pluginConfiguration {
-        name = "AI Code Quality Risk"
+        name = "EntropyGuard"
     }
 }
 

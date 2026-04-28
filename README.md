@@ -1,4 +1,4 @@
-# AI Code Quality Risk IntelliJ Plugin (MVP v1)
+# EntropyGuard IntelliJ Plugin (MVP v1)
 
 This repository contains a Kotlin-based IntelliJ plugin MVP that analyzes in-progress code changes and shows a risk score with findings and explanations.
 
