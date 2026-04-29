@@ -51,40 +51,67 @@ class LlmCaller(
         val isWindows = System.getProperty("os.name").lowercase().contains("windows")
         
         return try {
+            // Try HTTP APIs first (fastest, no process overhead)
+            System.err.println("🚀 Trying HTTP APIs first...")
+            
+            // Try OpenRouter (cloud, fast, free models available)
+            System.err.println("☁️  Trying OpenRouter...")
+            val openRouterResult = callOpenRouter(prompt)
+            if (openRouterResult != null) {
+                System.err.println("✅ OpenRouter successful")
+                return openRouterResult
+            }
+            
+            // Try LM Studio (local, fast HTTP API)
+            System.err.println("🖥️  Trying LM Studio (http://localhost:1234)...")
+            val lmStudioResult = callLmStudio(prompt)
+            if (lmStudioResult != null) {
+                System.err.println("✅ LM Studio successful")
+                return lmStudioResult
+            }
+            
+            // Try Ollama HTTP API (local, fast)
+            System.err.println("🦙 Trying Ollama HTTP API (http://localhost:11434)...")
+            val ollamaResult = callOllamaHttp(prompt)
+            if (ollamaResult != null) {
+                System.err.println("✅ Ollama HTTP successful")
+                return ollamaResult
+            }
+            
+            // CLI fallbacks (slower due to process spawning)
             if (isWindows) {
-                System.err.println("� Windows detected - trying CLI tools in order...")
+                System.err.println("🔍 Windows detected - trying CLI tools as fallback...")
                 
-                // Try aichat first (fastest, working)
                 System.err.println("📱 Trying aichat...")
-                callAichatWindows(prompt)?.let { 
+                val aichatResult = callAichatWindows(prompt)
+                if (aichatResult != null) {
                     System.err.println("✅ aichat successful")
-                    return@let it 
+                    return aichatResult
                 }
                 
                 System.err.println("📱 Trying llm...")
-                callLlmWindows(prompt)?.let { 
+                val llmResult = callLlmWindows(prompt)
+                if (llmResult != null) {
                     System.err.println("✅ llm successful")
-                    return@let it 
+                    return llmResult
                 }
                 
-                System.err.println("📱 Trying ollama...")
-                callOllamaWindows(prompt)?.let { 
-                    System.err.println("✅ ollama successful")
-                    return@let it 
+                System.err.println("📱 Trying ollama CLI...")
+                val ollamaCliResult = callOllamaWindows(prompt)
+                if (ollamaCliResult != null) {
+                    System.err.println("✅ ollama CLI successful")
+                    return ollamaCliResult
                 }
-                
-                // Try LM Studio as fallback
-                System.err.println("�️  Trying LM Studio with qwen2.5-coder-14b...")
-                callLmStudio(prompt)?.let {
-                    System.err.println("✅ LM Studio successful")
-                    return@let it
-                }
-                
-                throw IllegalStateException("All tools failed (tried: aichat, llm, ollama, lmstudio)")
             } else {
                 System.err.println("🐧 Linux detected - using opencode...")
-                callOpenCodeUnix(prompt)
+                val opencodeResult = callOpenCodeUnix(prompt)
+                if (opencodeResult != null) {
+                    System.err.println("✅ opencode successful")
+                    return opencodeResult
+                }
             }
+            
+            throw IllegalStateException("All LLM tools failed (tried: openrouter, lmstudio, ollama-http, aichat, llm, ollama-cli)")
         } catch (e: Exception) {
             System.err.println("⚠️  All LLM tools failed, using mock mode: ${e.message}")
             callMockMode(prompt)
@@ -97,7 +124,15 @@ class LlmCaller(
         val script = File.createTempFile("call_aichat_", ".bat", File(tempDir))
         
         try {
-            promptFile.writeText(prompt)
+            val formattedPrompt = """
+                $prompt
+                
+                IMPORTANT: Output each file in this exact format:
+                <file path="src/main/java/com/example/Filename.java">
+                // file content here
+                </file>
+            """.trimIndent()
+            promptFile.writeText(formattedPrompt)
             
             script.writeText("""
                 @echo off
@@ -238,8 +273,8 @@ class LlmCaller(
             conn.requestMethod = "POST"
             conn.setRequestProperty("Content-Type", "application/json")
             conn.doOutput = true
-            conn.connectTimeout = 30000
-            conn.readTimeout = 300000
+            conn.connectTimeout = 10000
+            conn.readTimeout = 120000
             
             conn.outputStream.use { os ->
                 os.write(requestBodyString.toByteArray(Charsets.UTF_8))
@@ -269,6 +304,139 @@ class LlmCaller(
             return null
         } catch (e: Exception) {
             System.err.println("❌ LM Studio error: ${e.message}")
+            return null
+        }
+    }
+    
+    private fun callOllamaHttp(prompt: String): String? {
+        val ollamaUrl = System.getProperty("ollama.url", "http://localhost:11434")
+        val apiUrl = "$ollamaUrl/api/generate"
+        
+        try {
+            System.err.println("⚡ Calling Ollama API at $apiUrl...")
+            
+            val json = Json { ignoreUnknownKeys = true }
+            
+            // Build the request body
+            val requestBody = buildJsonObject {
+                put("model", JsonPrimitive(System.getProperty("ollama.model", "qwen2.5-coder:7b-instruct")))
+                put("prompt", JsonPrimitive(prompt))
+                put("system", JsonPrimitive("You are a helpful coding assistant. Generate complete, working Java Spring Boot code. Output files in the format: <file path=\"src/main/java/...\">...</file>"))
+                put("temperature", JsonPrimitive(0.7))
+                put("max_tokens", JsonPrimitive(2048))
+                put("stream", JsonPrimitive(false))
+            }
+            
+            val requestBodyString = json.encodeToString(JsonObject.serializer(), requestBody)
+            
+            val url = URL(apiUrl)
+            val conn = url.openConnection() as HttpURLConnection
+            conn.requestMethod = "POST"
+            conn.setRequestProperty("Content-Type", "application/json")
+            conn.doOutput = true
+            conn.connectTimeout = 5000
+            conn.readTimeout = 60000
+            
+            conn.outputStream.use { os ->
+                os.write(requestBodyString.toByteArray(Charsets.UTF_8))
+            }
+            
+            val responseCode = conn.responseCode
+            System.err.println("🔍 Ollama response code: $responseCode")
+            
+            if (responseCode == 200) {
+                val response = conn.inputStream.bufferedReader().use { it.readText() }
+                System.err.println("🔍 Ollama response length: ${response.length}")
+                
+                // Parse the response - Ollama returns {"response": "..."}
+                val responseJson = json.parseToJsonElement(response).jsonObject
+                val content = responseJson["response"]?.jsonPrimitive?.content
+                
+                if (content != null && content.isNotBlank() && content.length > 50) {
+                    System.err.println("✅ Ollama returned ${content.length} characters")
+                    return content
+                }
+            } else {
+                val error = conn.errorStream?.bufferedReader()?.use { it.readText() } ?: "Unknown error"
+                System.err.println("❌ Ollama error: $error")
+            }
+            
+            return null
+        } catch (e: Exception) {
+            System.err.println("❌ Ollama error: ${e.message}")
+            return null
+        }
+    }
+    
+    private fun callOpenRouter(prompt: String): String? {
+        val apiKey = System.getProperty("openrouter.api.key") 
+            ?: System.getenv("OPENROUTER_API_KEY")
+            ?: return null.also { System.err.println("⚠️  OpenRouter API key not set") }
+        
+        val model = System.getProperty("openrouter.model", "meta-llama/llama-3.1-8b-instruct")
+        val apiUrl = "https://openrouter.ai/api/v1/chat/completions"
+        
+        try {
+            System.err.println("⚡ Calling OpenRouter API with model: $model...")
+            
+            val json = Json { ignoreUnknownKeys = true }
+            
+            val requestBody = buildJsonObject {
+                put("model", JsonPrimitive(model))
+                put("messages", buildJsonArray {
+                    add(buildJsonObject {
+                        put("role", JsonPrimitive("system"))
+                        put("content", JsonPrimitive("You are a helpful coding assistant. Generate complete, working Java Spring Boot code. Output files in the format: <file path=\"src/main/java/...\">...</file>"))
+                    })
+                    add(buildJsonObject {
+                        put("role", JsonPrimitive("user"))
+                        put("content", JsonPrimitive(prompt))
+                    })
+                })
+                put("temperature", JsonPrimitive(0.7))
+                put("max_tokens", JsonPrimitive(2048))
+            }
+            
+            val requestBodyString = json.encodeToString(JsonObject.serializer(), requestBody)
+            
+            val url = URL(apiUrl)
+            val conn = url.openConnection() as HttpURLConnection
+            conn.requestMethod = "POST"
+            conn.setRequestProperty("Content-Type", "application/json")
+            conn.setRequestProperty("Authorization", "Bearer $apiKey")
+            conn.setRequestProperty("HTTP-Referer", "https://aicodequalityrisk.local")
+            conn.setRequestProperty("X-Title", "AI Code Quality Risk Generator")
+            conn.doOutput = true
+            conn.connectTimeout = 15000
+            conn.readTimeout = 90000
+            
+            conn.outputStream.use { os ->
+                os.write(requestBodyString.toByteArray(Charsets.UTF_8))
+            }
+            
+            val responseCode = conn.responseCode
+            System.err.println("🔍 OpenRouter response code: $responseCode")
+            
+            if (responseCode == 200) {
+                val response = conn.inputStream.bufferedReader().use { it.readText() }
+                System.err.println("🔍 OpenRouter response length: ${response.length}")
+                
+                val responseJson = json.parseToJsonElement(response).jsonObject
+                val choices = responseJson["choices"]?.jsonArray
+                val content = choices?.get(0)?.jsonObject?.get("message")?.jsonObject?.get("content")?.jsonPrimitive?.content
+                
+                if (content != null && content.isNotBlank() && content.length > 50) {
+                    System.err.println("✅ OpenRouter returned ${content.length} characters")
+                    return content
+                }
+            } else {
+                val error = conn.errorStream?.bufferedReader()?.use { it.readText() } ?: "Unknown error"
+                System.err.println("❌ OpenRouter error: $error")
+            }
+            
+            return null
+        } catch (e: Exception) {
+            System.err.println("❌ OpenRouter error: ${e.message}")
             return null
         }
     }

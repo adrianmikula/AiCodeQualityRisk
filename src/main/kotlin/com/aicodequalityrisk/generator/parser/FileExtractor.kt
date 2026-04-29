@@ -6,60 +6,123 @@ data class ExtractedFile(
 )
 
 class FileExtractor {
-    private val xmlPattern = Regex("""<file\s+path="([^"]+)">(.*?)</file>""", RegexOption.DOT_MATCHES_ALL)
-    private val markdownPattern = Regex("""```(\w+)\s*\n?.*?path\s*=\s*([^\n]+)\n(.*?)```""", RegexOption.DOT_MATCHES_ALL)
-    private val codeBlockPattern = Regex("""```java\n(.*?)```""", RegexOption.DOT_MATCHES_ALL)
-
+    
     fun extractFiles(response: String): List<ExtractedFile> {
         val files = mutableListOf<ExtractedFile>()
         
-        files.addAll(extractXmlFiles(response))
+        // Try XML format first (fast, exact matching)
+        files.addAll(extractXmlFormat(response))
         if (files.isNotEmpty()) return files
         
-        files.addAll(extractMarkdownFiles(response))
+        // Try markdown code blocks with path hints (line-by-line parsing)
+        files.addAll(extractMarkdownFormat(response))
         if (files.isNotEmpty()) return files
+        
+        // Try simple code block extraction
+        files.addAll(extractSimpleCodeBlocks(response))
         
         return files
     }
-
-    private fun extractXmlFiles(response: String): List<ExtractedFile> {
-        return xmlPattern.findAll(response).map { match ->
-            ExtractedFile(
-                path = match.groupValues[1].trim(),
-                content = match.groupValues[2].trim()
-            )
-        }.toList()
-    }
-
-    private fun extractMarkdownFiles(response: String): List<ExtractedFile> {
+    
+    private fun extractXmlFormat(response: String): List<ExtractedFile> {
         val files = mutableListOf<ExtractedFile>()
+        val lines = response.lines()
+        var i = 0
         
-        codeBlockPattern.findAll(response).forEach { match ->
-            files.add(ExtractedFile(
-                path = inferFilename(files.size),
-                content = match.groupValues[1].trim()
-            ))
+        while (i < lines.size) {
+            val line = lines[i]
+            val xmlOpenMatch = Regex("""<file\s+path="([^"]+)">""").find(line)
+            
+            if (xmlOpenMatch != null) {
+                val path = xmlOpenMatch.groupValues[1]
+                val contentLines = mutableListOf<String>()
+                i++
+                
+                while (i < lines.size && !lines[i].contains("</file>")) {
+                    contentLines.add(lines[i])
+                    i++
+                }
+                
+                if (contentLines.isNotEmpty()) {
+                    files.add(ExtractedFile(path = path, content = contentLines.joinToString("\n")))
+                }
+            }
+            i++
         }
         
-        val fileRefs = Regex("""file:\s*([^\n]+)""").findAll(response)
-        fileRefs.forEach { match ->
-            val filePath = match.groupValues[1].trim()
-            val codeSection = Regex("""$filePath\s*\n```java\n(.*?)```""", RegexOption.DOT_MATCHES_ALL)
-            codeSection.find(response)?.let { codeMatch ->
-                files.add(ExtractedFile(
-                    path = filePath,
-                    content = codeMatch.groupValues[1].trim()
-                ))
+        return files
+    }
+    
+    private fun extractMarkdownFormat(response: String): List<ExtractedFile> {
+        val files = mutableListOf<ExtractedFile>()
+        val lines = response.lines()
+        var i = 0
+        var currentPath: String? = null
+        var currentContent = mutableListOf<String>()
+        var inCodeBlock = false
+        
+        while (i < lines.size) {
+            val line = lines[i]
+            
+            // Check for path hint: path="..." or path='...'
+            val pathMatch = Regex("""path\s*=\s*["']([^"']+)["']""").find(line)
+            if (pathMatch != null && !inCodeBlock) {
+                currentPath = pathMatch.groupValues[1]
             }
+            
+            // Check for code block start
+            if (line.trim().startsWith("```java") || line.trim().startsWith("```")) {
+                if (!inCodeBlock) {
+                    inCodeBlock = true
+                    currentContent.clear()
+                } else {
+                    // End of code block
+                    inCodeBlock = false
+                    if (currentContent.isNotEmpty()) {
+                        val path = currentPath ?: inferFilename(files.size)
+                        files.add(ExtractedFile(
+                            path = path,
+                            content = currentContent.joinToString("\n")
+                        ))
+                        currentPath = null
+                    }
+                }
+            } else if (inCodeBlock) {
+                currentContent.add(line)
+            }
+            
+            i++
         }
-
-        val simpleBlocks = Regex("""(src/main/java/[^\n]+\\.java)\s*\n(.*?)(?=\n[^ ]|\Z)""", RegexOption.DOT_MATCHES_ALL)
-        simpleBlocks.findAll(response).forEach { match ->
-            val path = match.groupValues[1].trim()
-            val content = match.groupValues[2].trim()
-            if (content.contains("class ") && !files.any { it.path == path }) {
-                files.add(ExtractedFile(path = path, content = content))
+        
+        return files
+    }
+    
+    private fun extractSimpleCodeBlocks(response: String): List<ExtractedFile> {
+        val files = mutableListOf<ExtractedFile>()
+        val lines = response.lines()
+        var i = 0
+        var inCodeBlock = false
+        var currentContent = mutableListOf<String>()
+        
+        while (i < lines.size) {
+            val line = lines[i]
+            
+            if (line.trim() == "```java" || line.trim().startsWith("```") && !inCodeBlock) {
+                inCodeBlock = true
+                currentContent.clear()
+            } else if (line.trim() == "```" && inCodeBlock) {
+                inCodeBlock = false
+                if (currentContent.isNotEmpty() && currentContent.any { it.contains("class ") }) {
+                    files.add(ExtractedFile(
+                        path = inferFilename(files.size),
+                        content = currentContent.joinToString("\n")
+                    ))
+                }
+            } else if (inCodeBlock) {
+                currentContent.add(line)
             }
+            
+            i++
         }
         
         return files

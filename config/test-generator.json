@@ -11,8 +11,11 @@
       "architecture": "Spring Boot REST API",
       "features": ["CRUD operations", "H2 database", "JPA"],
       "iterationFeatures": [
-        "Add user authentication",
-        "Add input validation"
+        "Add user authentication with JWT",
+        "Add input validation with Bean Validation",
+        "Add caching with Redis",
+        "Add audit logging",
+        "Add soft delete functionality"
       ]
     }
   ],
