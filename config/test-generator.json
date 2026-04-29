@@ -20,5 +20,5 @@
     }
   ],
   "modes": ["ITERATIVE"],
-  "variationsPerPrompt": 1
+  "variationsPerPrompt": 3
 }

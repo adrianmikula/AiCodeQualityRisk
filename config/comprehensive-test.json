@@ -1,0 +1,103 @@
+{
+  "name": "comprehensive-degradation-test",
+  "outputDir": "workspace/comprehensive-test",
+  "model": "meta-llama/llama-3.1-8b-instruct",
+  "maxRetries": 2,
+  "retryDelayMs": 2000,
+  "promptTemplates": [
+    {
+      "name": "task_mgmt_explicit",
+      "domain": "Task Management",
+      "architecture": "Spring Boot REST API",
+      "features": ["CRUD operations", "H2 database", "JPA", "REST endpoints"],
+      "iterationFeatures": [
+        "Add user authentication with JWT tokens",
+        "Add input validation with Bean Validation and custom validators",
+        "Add caching with Redis and cache eviction strategies",
+        "Add audit logging with timestamps and user tracking",
+        "Add soft delete functionality with deleted_at timestamps",
+        "Add pagination and sorting for list endpoints",
+        "Add search functionality with filters",
+        "Add rate limiting for API endpoints",
+        "Add unit tests with JUnit and Mockito",
+        "Add integration tests with TestContainers",
+        "Add API documentation with OpenAPI/Swagger",
+        "Add monitoring with Micrometer and Prometheus",
+        "Add exception handling with global exception handler",
+        "Add request/response logging",
+        "Add data encryption for sensitive fields"
+      ]
+    },
+    {
+      "name": "task_mgmt_implicit",
+      "domain": "Task Management",
+      "architecture": "Spring Boot REST API",
+      "features": ["CRUD operations", "database", "REST"],
+      "iterationFeatures": [
+        "Add user login",
+        "Add form validation",
+        "Add caching",
+        "Add logging",
+        "Add delete functionality",
+        "Add pagination",
+        "Add search",
+        "Add rate limiting",
+        "Add tests",
+        "Add integration tests",
+        "Add documentation",
+        "Add monitoring",
+        "Add error handling",
+        "Add request logging",
+        "Add encryption"
+      ]
+    },
+    {
+      "name": "ecommerce_explicit",
+      "domain": "E-commerce",
+      "architecture": "Spring Boot microservices",
+      "features": ["Product catalog", "Shopping cart", "Order management", "Payment processing"],
+      "iterationFeatures": [
+        "Implement user authentication with OAuth2 and JWT",
+        "Add inventory management with stock tracking",
+        "Add payment gateway integration with Stripe",
+        "Add email notifications for orders",
+        "Add product reviews and ratings",
+        "Add wishlist functionality",
+        "Add discount and coupon system",
+        "Add order tracking and shipment updates",
+        "Add recommendation engine",
+        "Add admin dashboard for analytics",
+        "Add multi-currency support",
+        "Add tax calculation based on region",
+        "Add fraud detection for payments",
+        "Add bulk import/export for products",
+        "Add customer support chat"
+      ]
+    },
+    {
+      "name": "ecommerce_implicit",
+      "domain": "E-commerce",
+      "architecture": "Spring Boot",
+      "features": ["Products", "Cart", "Orders", "Payments"],
+      "iterationFeatures": [
+        "Add user login",
+        "Add inventory tracking",
+        "Add payments",
+        "Add email notifications",
+        "Add product reviews",
+        "Add wishlist",
+        "Add coupons",
+        "Add order tracking",
+        "Add recommendations",
+        "Add admin panel",
+        "Add multiple currencies",
+        "Add taxes",
+        "Add fraud checks",
+        "Add import/export",
+        "Add customer chat"
+      ]
+    }
+  ],
+  "modes": ["ITERATIVE"],
+  "variationsPerPrompt": 2
+}
