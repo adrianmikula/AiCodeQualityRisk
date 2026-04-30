@@ -49,3 +49,4 @@ results/
 .env
 .env.local
 .env.*.local
+.aider*

@@ -184,7 +184,7 @@ class RuleFactory {
             "DUPLICATION" -> Category.DUPLICATION
             "PERFORMANCE" -> Category.PERFORMANCE
             "SECURITY" -> Category.SECURITY
-            "CORRUPTED_SOURCE" -> Category.CORRUPTED_SOURCE
+            "CORRUPTION" -> Category.CORRUPTION
             else -> throw IllegalArgumentException("Unknown category: $category")
         }
     }

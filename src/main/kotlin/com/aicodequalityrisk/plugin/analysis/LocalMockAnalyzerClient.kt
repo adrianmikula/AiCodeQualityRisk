@@ -34,7 +34,7 @@ class LocalMockAnalyzerClient : AnalyzerClient {
                 Category.DUPLICATION -> duplicationScore += rule.scoreDelta
                 Category.PERFORMANCE -> performanceScore += rule.scoreDelta
                 Category.SECURITY -> securityScore += rule.scoreDelta
-                Category.CORRUPTED_SOURCE -> corruptedSourceScore += rule.scoreDelta
+                Category.CORRUPTION -> corruptedSourceScore += rule.scoreDelta
             }
             val location = estimateLineNumber(input, rule.pattern)
             rule.finding.copy(filePath = input.filePath, lineNumber = location)
@@ -68,7 +68,7 @@ class LocalMockAnalyzerClient : AnalyzerClient {
                 title = "Corrupted source content detected",
                 detail = "File contains non-code or corrupted content: ${issues.joinToString(", ")}. This may indicate AI-generated slop or incomplete code.",
                 severity = Severity.HIGH,
-                category = Category.CORRUPTED_SOURCE,
+                category = Category.CORRUPTION,
                 filePath = input.filePath
             )
         }

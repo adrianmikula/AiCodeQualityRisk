@@ -20,14 +20,14 @@
     <product-descriptor
         code="PAICODEQUALITY"
         release-date="20260101"
-        release-version="10"
+        release-version="11"
         optional="true"/>
 
     <!-- idea-version: Exclude the until-build attribute entirely, giving open-ended compatibility with all future IntelliJ versions. -->
-    <idea-version since-build="242.*" />
+    <idea-version since-build="243.*" />
 
     <!-- version: increment this for every minor release. The first 2 numbers should match the release-version -->
-    <version>1.0.3</version>
+    <version>1.1.0</version>
 
     <name>EntropyGuard</name>
     <id>com.aicodequalityrisk.plugin</id>
@@ -127,9 +127,16 @@
     </actions>
 
     <change-notes><![CDATA[
-    <h>1.0.3 - 2026-04-25</h>
+    <h>1.1.0 - 2026-04-30</h>
     <ul>
         <li>Renamed plugin to EntropyGuard</li>
+        <li>Added detection of corrupted source files as a new top-level category</li>
+        <li>Improved detection of common AI duplication signals</li>
+        <li>Improved detection of common AI security anti-patterns</li>
+        <li>Got code generator tool 100% working</li>
+    </ul>
+    <h>1.0.3 - 2026-04-25</h>
+    <ul>
         <li>Added new improved icon</li>
         <li>Fixed licensing to correctly use IntelliJ Marketplace Trial API</li>
         <li>Fixed code generator compilation issues</li>

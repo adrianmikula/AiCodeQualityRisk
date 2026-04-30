@@ -35,6 +35,11 @@ open class LicenseService {
     }
 
     private fun checkTrialStatus(): LicenseStatus {
+        // Dev mode bypass: allow licensed status for development
+        if (System.getProperty("aicodequalityrisk.devMode") == "true") {
+            return LicenseStatus.LICENSED
+        }
+
         val pluginManager = PluginManager.getInstance()
         val plugin = pluginManager.findEnabledPlugin(PluginId.getId(productCode))
         

@@ -27,7 +27,7 @@ These are **not things you can defer to traditional static analysis**. If your t
 
 **Implementation:**
 
-* ✅ Added `CORRUPTED_SOURCE` category to `Category` enum
+* ✅ Added `CORRUPTION` category to `Category` enum
 * ✅ Created `CorruptedSourceDetector` with heuristics:
   * Markdown tokens (``` , `<file path=`)
   * Mixed language density (Java + XML + prose)

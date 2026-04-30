@@ -425,7 +425,7 @@ rules:
           target: "corrupted.parseFailed"
           value: true
     scoreDelta: 30
-    category: "CORRUPTED_SOURCE"
+    category: "CORRUPTION"
     finding:
       title: "Parse failure detected"
       detail: "File could not be parsed by both JavaParser and Tree-sitter. This indicates corrupted or non-Java content in a Java file."
@@ -440,7 +440,7 @@ rules:
           operator: ">"
           value: 0
     scoreDelta: 20
-    category: "CORRUPTED_SOURCE"
+    category: "CORRUPTION"
     finding:
       title: "Markdown tokens detected"
       detail: "File contains markdown code fences or file path markers typical of AI-generated slop or incomplete code."
@@ -455,7 +455,7 @@ rules:
           operator: ">"
           value: 2
     scoreDelta: 25
-    category: "CORRUPTED_SOURCE"
+    category: "CORRUPTION"
     finding:
       title: "Unbalanced braces detected"
       detail: "File has unbalanced braces, brackets, or parentheses indicating incomplete or malformed code."
@@ -470,7 +470,7 @@ rules:
           operator: ">"
           value: 0.3
     scoreDelta: 18
-    category: "CORRUPTED_SOURCE"
+    category: "CORRUPTION"
     finding:
       title: "Mixed language content detected"
       detail: "File contains high density of prose-like text mixed with code, typical of AI-generated explanations or incomplete code."

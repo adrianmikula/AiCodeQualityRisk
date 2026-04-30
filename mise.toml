@@ -37,6 +37,10 @@ run = "gradle installPlugin"
 description = "Run IDE with plugin installed"
 run = "gradle runIde"
 
+[tasks.debug-ide]
+description = "Debug IDE with plugin in dev mode (license bypass)"
+run = "gradle debugIde"
+
 [tasks.watch]
 description = "Watch for changes and rebuild"
 run = "gradle classes --watch"

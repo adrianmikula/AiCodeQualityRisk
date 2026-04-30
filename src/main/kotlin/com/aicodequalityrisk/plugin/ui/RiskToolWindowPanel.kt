@@ -317,7 +317,7 @@ class RiskToolWindowPanel(private val project: Project) : JPanel(BorderLayout())
             table.columnModel.getColumn(2).maxWidth = 100
             table.setRowHeight(24)
             table.setFont(Font("SansSerif", Font.PLAIN, 12))
-            table.setDefaultRenderer(Object::class.java, SeverityCellRenderer())
+            table.setDefaultRenderer(Any::class.java, SeverityCellRenderer())
             table.addMouseListener(object : MouseAdapter() {
                 override fun mouseClicked(e: MouseEvent) {
                     if (e.clickCount == 1) {

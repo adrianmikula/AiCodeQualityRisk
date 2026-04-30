@@ -1,15 +1,62 @@
 [tools]
 java = "17"
 
-[tasks]
-build = "mise-build.bat build"
-test = "mise-build.bat test"
-run-ide = "mise-build.bat runIde"
-run = "mise-build.bat runIde"
-clean = "mise-build.bat clean"
-check = "mise-build.bat check"
-assemble = "mise-build.bat assemble"
-install = "mise-build.bat installDist"
-gen = "PATH=\"$HOME/.npm-global/bin:$PATH\" mise-build.bat runGenerator"
-runGenerator = "PATH=\"$HOME/.npm-global/bin:$PATH\" mise-build.bat runGenerator"
-gen-clean = "rm -rf /tmp/ai-code-generated/"
+[tasks.build]
+description = "Build the project"
+run = "bash gradlew build"
+run_windows = "mise-build.bat build"
+
+[tasks.test]
+description = "Run tests"
+run = "bash gradlew test"
+run_windows = "mise-build.bat test"
+
+[tasks.run-ide]
+description = "Run the plugin in IntelliJ IDEA"
+run = "bash gradlew runIde"
+run_windows = "mise-build.bat runIde"
+
+[tasks.run-ide-dev]
+description = "Run IDE with dev mode (license bypass)"
+run = "bash gradlew runIde -PdevMode=true"
+run_windows = "mise-build.bat runIde -PdevMode=true"
+
+[tasks.debug-ide]
+description = "Debug IDE with plugin"
+run = "bash gradlew runIde --debug-jvm"
+run_windows = "mise-build.bat debugIde"
+
+[tasks.clean]
+description = "Clean build artifacts"
+run = "bash gradlew clean"
+run_windows = "mise-build.bat clean"
+
+[tasks.check]
+description = "Run checks (tests + quality)"
+run = "bash gradlew check"
+run_windows = "mise-build.bat check"
+
+[tasks.assemble]
+description = "Assemble the plugin"
+run = "bash gradlew assemble"
+run_windows = "mise-build.bat assemble"
+
+[tasks.install]
+description = "Install the plugin locally"
+run = "bash gradlew installDist"
+run_windows = "mise-build.bat installDist"
+
+[tasks.gen]
+description = "Run the AI code generator"
+run = "PATH=\"$HOME/.npm-global/bin:$PATH\" bash gradlew run"
+run_windows = "\"$HOME/.npm-global/bin:$PATH\" mise-build.bat run"
+
+[tasks.runGenerator]
+description = "Run the AI code generator"
+run = "PATH=\"$HOME/.npm-global/bin:$PATH\" bash gradlew run"
+run_windows = "\"$HOME/.npm-global/bin:$PATH\" mise-build.bat runGenerator"
+
+[tasks.gen-clean]
+description = "Clean generated AI code"
+run = "rm -rf /tmp/ai-code-generated/"
+run_windows = "rmdir /s /q C:\\tmp\\ai-code-generated"

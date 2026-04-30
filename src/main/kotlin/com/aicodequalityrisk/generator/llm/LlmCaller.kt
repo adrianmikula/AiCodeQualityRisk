@@ -4,7 +4,7 @@ import java.io.File
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.net.HttpURLConnection
-import java.net.URL
+import java.net.URI
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
@@ -268,7 +268,7 @@ class LlmCaller(
             
             val requestBodyString = json.encodeToString(JsonObject.serializer(), requestBody)
             
-            val url = URL(apiUrl)
+            val url = URI(apiUrl).toURL()
             val conn = url.openConnection() as HttpURLConnection
             conn.requestMethod = "POST"
             conn.setRequestProperty("Content-Type", "application/json")
@@ -329,7 +329,7 @@ class LlmCaller(
             
             val requestBodyString = json.encodeToString(JsonObject.serializer(), requestBody)
             
-            val url = URL(apiUrl)
+            val url = URI(apiUrl).toURL()
             val conn = url.openConnection() as HttpURLConnection
             conn.requestMethod = "POST"
             conn.setRequestProperty("Content-Type", "application/json")
@@ -399,7 +399,7 @@ class LlmCaller(
             
             val requestBodyString = json.encodeToString(JsonObject.serializer(), requestBody)
             
-            val url = URL(apiUrl)
+            val url = URI(apiUrl).toURL()
             val conn = url.openConnection() as HttpURLConnection
             conn.requestMethod = "POST"
             conn.setRequestProperty("Content-Type", "application/json")

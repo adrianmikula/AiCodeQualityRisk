@@ -25,7 +25,7 @@ class CorruptedSourceDetector {
         val hasCorruptedContent = parseFailed ||
             markdownTokenCount > 0 ||
             xmlFragmentCount > 0 ||
-            unbalancedBraceCount > 2 ||
+            unbalancedBraceCount > 0 ||
             mixedLanguageDensity > 0.3
 
         return CorruptedSourceMetrics(

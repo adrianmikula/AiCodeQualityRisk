@@ -50,21 +50,10 @@ tasks.register<Exec>("runGenerator") {
                     "--password", "d242bac4-b1c9-49f0-a292-a84a4b685c2b",
                     "--model", "opencode/minimax-m2.5-free",
                     prompt.replace("\"", "\\\"").replace("\n", "\\n")
-                ).workingDir = projectDir
+                )
+                workingDir = projectDir
 
                 csvFile.appendText("$projectId,SINGLE_SHOT,$name,1,0,0,0,0,0.0,10\n")
             }
-    }
-}
-
-// Triple class definition
-class Triple<A, B, C> {
-    val first: A
-    val second: B
-    val third: C
-    constructor(first: A, second: B, third: C) {
-        this.first = first
-        this.second = second
-        this.third = third
     }
 }

@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "com.aicodequalityrisk"
-version = "1.0.3"
+version = "1.1.0"
 
 repositories {
     mavenCentral()
@@ -18,6 +18,13 @@ repositories {
 intellijPlatform {
     pluginConfiguration {
         name = "AI Code Quality Risk"
+    }
+
+    // Run configuration
+    tasks.runIde {
+        group = "Run"
+        description = "Run the plugin in IntelliJ IDEA"
+        jvmArgs("-Daicodequalityrisk.devMode=${providers.gradleProperty("devMode").orElse("false").get()}")
     }
 }
 

@@ -51,7 +51,10 @@ data class RiskResult(
     val timestamp: Long = 0L
 ) {
     val complexityConsolidated: Int
-        get() = listOf(complexityScore, deepNestingScore, complexBooleanLogicScore, overDefensiveProgrammingScore, nullReturnScore).average().toInt()
+        get() {
+            val nonZero = listOf(complexityScore, deepNestingScore, complexBooleanLogicScore, overDefensiveProgrammingScore, nullReturnScore).filter { it != 0 }
+            return if (nonZero.isEmpty()) 0 else (nonZero.sum().toDouble() / nonZero.size).toInt()
+        }
 
     val duplicationConsolidated: Int
         get() = listOf(duplicationScore, boilerplateBloatScore).average().toInt()
