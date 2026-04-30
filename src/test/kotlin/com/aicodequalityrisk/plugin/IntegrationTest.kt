@@ -73,7 +73,8 @@ class IntegrationTest {
             ),
             fuzzyMetrics = com.aicodequalityrisk.plugin.analysis.FuzzyMetrics(
                 duplicateMethodCount = 3, // 3 pairs
-                maxSimilarityScore = 1.0 // 100%
+                maxSimilarityScore = 0.8, // Lower with AST-based approach
+                astBasedSimilarityEnabled = true
             )
         )
 
@@ -153,7 +154,8 @@ class IntegrationTest {
             ),
             fuzzyMetrics = com.aicodequalityrisk.plugin.analysis.FuzzyMetrics(
                 duplicateMethodCount = 3, // 3 pairs
-                maxSimilarityScore = 1.0 // 100%
+                maxSimilarityScore = 0.8, // Lower with AST-based approach
+                astBasedSimilarityEnabled = true
             )
         )
 

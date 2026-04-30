@@ -40,6 +40,47 @@ class ASTAnalyzer {
         "C:\\"
     )
 
+    private val secretPatterns = listOf(
+        "sk-",  // Stripe/OpenAI secret keys
+        "pk-",  // Stripe public keys
+        "AKIA", // AWS access keys
+        "AIza", // Google API keys
+        "ya29", // Google OAuth tokens
+        "ghp_", // GitHub personal access tokens
+        "gho_", // GitHub OAuth tokens
+        "ghu_", // GitHub user tokens
+        "ghs_", // GitHub server tokens
+        "ghr_", // GitHub refresh tokens
+        "Bearer", // Bearer tokens in code
+        "Basic", // Basic auth in code
+        "eyJ"   // JWT tokens (base64 header)
+    )
+
+    private val placeholderDomainPatterns = listOf(
+        "example.com",
+        "example.org",
+        "example.net",
+        "localhost",
+        "127.0.0.1",
+        "0.0.0.0",
+        "[::1]",
+        "test.com",
+        "dev.com",
+        "staging.com",
+        "placeholder"
+    )
+
+    private val passwordVariableNames = listOf(
+        "password",
+        "passwd",
+        "pwd",
+        "pass",
+        "secret",
+        "token",
+        "credential",
+        "auth"
+    )
+
     fun analyzeCode(code: String): ASTMetrics {
         return try {
             val compilationUnit = javaParser.parse(code).result.orElse(null) ?: return ASTMetrics()
@@ -62,6 +103,9 @@ class ASTAnalyzer {
         val stringLiterals = cu.findAll(StringLiteralExpr::class.java).map { it.value }
         val duplicateStringLiteralCount = stringLiterals.groupingBy { it }.eachCount().count { it.value > 1 }
         val hardcodedConfigLiteralCount = stringLiterals.count { matchesHardcodedConfig(it) }
+        val hardcodedSecretCount = stringLiterals.count { matchesSecret(it) }
+        val placeholderDomainCount = stringLiterals.count { matchesPlaceholderDomain(it) }
+        val plaintextPasswordComparisonCount = countPlaintextPasswordComparisons(cu)
 
         val numberLiterals = buildList<String> {
             addAll(cu.findAll(IntegerLiteralExpr::class.java).map { it.value })
@@ -99,6 +143,11 @@ class ASTAnalyzer {
         val totalCommentCount = lineCommentCount + blockCommentCount + javadocCommentCount
         val codeLineCount = cu.toString().lines().count { it.isNotBlank() }
         val commentToCodeRatio = if (codeLineCount > 0) totalCommentCount.toDouble() / codeLineCount else 0.0
+
+        val nullReturnMetrics = calculateNullReturnMetrics(cu)
+        val nullReturnCount = nullReturnMetrics.first
+        val maxNullChainDepth = nullReturnMetrics.second
+        val hasNullReturns = nullReturnCount > 5 || maxNullChainDepth > 3
 
         val maxMethodLength = methodLengths.maxOrNull() ?: 0
         val averageMethodLength = if (methodLengths.isNotEmpty()) methodLengths.average() else 0.0
@@ -141,7 +190,16 @@ class ASTAnalyzer {
             hasHeavyBooleanLogic = booleanOperatorCount > 3,
             hasLongIfElseChain = maxElseIfChainLength > 2,
             hasExcessiveComments = commentToCodeRatio > 0.3,
-            hasVerboseComments = lineCommentCount > 10 || blockCommentCount > 5
+            hasVerboseComments = lineCommentCount > 10 || blockCommentCount > 5,
+            nullReturnCount = nullReturnCount,
+            maxNullChainDepth = maxNullChainDepth,
+            hasNullReturns = hasNullReturns,
+            plaintextPasswordComparisonCount = plaintextPasswordComparisonCount,
+            hardcodedSecretCount = hardcodedSecretCount,
+            placeholderDomainCount = placeholderDomainCount,
+            hasPlaintextPasswordComparison = plaintextPasswordComparisonCount > 0,
+            hasHardcodedSecrets = hardcodedSecretCount > 0,
+            hasPlaceholderDomains = placeholderDomainCount > 0
         )
     }
 
@@ -220,5 +278,103 @@ class ASTAnalyzer {
         val cleaned = value.removeSuffix("L").removeSuffix("l")
         val number = cleaned.toDoubleOrNull() ?: return false
         return number != 0.0 && number != 1.0 && number != -1.0
+    }
+
+    private fun calculateNullReturnMetrics(cu: CompilationUnit): Pair<Int, Int> {
+        val code = cu.toString()
+        
+        // Count .orElse(null) occurrences
+        val orElseNullPattern = Regex("""\.orElse\s*\(\s*null\s*\)""")
+        val nullReturnCount = orElseNullPattern.findAll(code).count()
+        
+        // Calculate maximum chain depth (e.g., .orElse().orElse(null) = depth 2)
+        val chainPattern = Regex("""(\.orElse\s*\()""")
+        val maxChainDepth = calculateMaxChainDepth(code, chainPattern)
+        
+        return Pair(nullReturnCount, maxChainDepth)
+    }
+
+    private fun calculateMaxChainDepth(code: String, pattern: Regex): Int {
+        val matches = pattern.findAll(code).toList()
+        if (matches.isEmpty()) return 0
+        
+        var maxDepth = 0
+        var currentDepth = 0
+        
+        for (match in matches) {
+            currentDepth++
+            if (currentDepth > maxDepth) {
+                maxDepth = currentDepth
+            }
+            
+            // Reset depth if we encounter a semicolon or closing brace (end of statement)
+            val afterMatch = code.substring(match.range.last + 1).take(50)
+            if (afterMatch.contains(";") || afterMatch.contains("}")) {
+                currentDepth = 0
+            }
+        }
+        
+        return maxDepth
+    }
+
+    private fun matchesSecret(value: String): Boolean {
+        val normalized = value.lowercase()
+        return secretPatterns.any { normalized.contains(it.lowercase()) } ||
+               isBase64Like(value) ||
+               isJwtLike(value) ||
+               isUuidLike(value)
+    }
+
+    private fun isBase64Like(value: String): Boolean {
+        if (value.length < 20) return false
+        val base64Chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/="
+        return value.all { it in base64Chars } && (value.endsWith("=") || value.endsWith("=="))
+    }
+
+    private fun isJwtLike(value: String): Boolean {
+        return value.startsWith("eyJ") && value.contains(".")
+    }
+
+    private fun isUuidLike(value: String): Boolean {
+        val uuidPattern = Regex("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")
+        return uuidPattern.matches(value)
+    }
+
+    private fun matchesPlaceholderDomain(value: String): Boolean {
+        val normalized = value.lowercase()
+        return placeholderDomainPatterns.any { normalized.contains(it.lowercase()) }
+    }
+
+    private fun countPlaintextPasswordComparisons(cu: CompilationUnit): Int {
+        var count = 0
+
+        // Check method calls like .equals(password), .compareTo(password)
+        cu.findAll(MethodCallExpr::class.java).forEach { methodCall ->
+            val methodName = methodCall.nameAsString
+            if (methodName in listOf("equals", "compareTo")) {
+                val args = methodCall.arguments
+                if (args.isNotEmpty()) {
+                    val firstArg = args[0].toString().lowercase()
+                    if (passwordVariableNames.any { firstArg.contains(it) }) {
+                        count++
+                    }
+                }
+            }
+        }
+
+        // Check binary expressions like password ==, password.equals()
+        cu.findAll(BinaryExpr::class.java).forEach { binaryExpr ->
+            val left = binaryExpr.left.toString().lowercase()
+            val right = binaryExpr.right.toString().lowercase()
+            if (binaryExpr.operator == BinaryExpr.Operator.EQUALS ||
+                binaryExpr.operator == BinaryExpr.Operator.NOT_EQUALS) {
+                if (passwordVariableNames.any { left.contains(it) } ||
+                    passwordVariableNames.any { right.contains(it) }) {
+                    count++
+                }
+            }
+        }
+
+        return count
     }
 }

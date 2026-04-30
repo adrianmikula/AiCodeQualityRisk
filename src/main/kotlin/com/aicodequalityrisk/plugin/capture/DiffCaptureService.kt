@@ -1,6 +1,7 @@
 package com.aicodequalityrisk.plugin.capture
 
 import com.aicodequalityrisk.plugin.analysis.ASTAnalyzer
+import com.aicodequalityrisk.plugin.analysis.CorruptedSourceDetector
 import com.aicodequalityrisk.plugin.analysis.FuzzyMetrics
 import com.aicodequalityrisk.plugin.analysis.TreeSitterFuzzyDetector
 import com.aicodequalityrisk.plugin.model.AnalysisInput
@@ -18,7 +19,8 @@ import java.util.concurrent.TimeUnit
 class DiffCaptureService(
     private val gitDiffRunner: (projectPath: String, args: List<String>) -> String = ::defaultRunGitDiff,
     private val astAnalyzer: ASTAnalyzer = ASTAnalyzer(),
-    private val fuzzyDetector: TreeSitterFuzzyDetector = TreeSitterFuzzyDetector()
+    private val fuzzyDetector: TreeSitterFuzzyDetector = TreeSitterFuzzyDetector(),
+    private val corruptedSourceDetector: CorruptedSourceDetector = CorruptedSourceDetector()
 ) {
 
     private val logger = Logger.getInstance(DiffCaptureService::class.java)
@@ -42,6 +44,7 @@ class DiffCaptureService(
         val diff = buildDiff(projectPath, filePath, snapshot)
         val astMetrics = astAnalyzer.analyzeCode(snapshot)
         val fuzzyMetrics = fuzzyDetector.detect(snapshot, filePath)
+        val corruptedSourceMetrics = corruptedSourceDetector.detect(snapshot, filePath)
 
         val input = AnalysisInput(
             projectPath = projectPath,
@@ -50,7 +53,8 @@ class DiffCaptureService(
             diffText = diff,
             fileSnapshot = snapshot,
             astMetrics = astMetrics,
-            fuzzyMetrics = fuzzyMetrics
+            fuzzyMetrics = fuzzyMetrics,
+            corruptedSourceMetrics = corruptedSourceMetrics
         )
         logger.info("Capture produced analysis input for file=$filePath, trigger=$triggerType")
         return input

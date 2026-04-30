@@ -13,6 +13,8 @@ class TreeSitterFuzzyDetector {
     private val thresholdCalculator = AdaptiveThresholdCalculator()
     private val shingleBuilder = MultiGranularShingleBuilder()
     private val entropyCalculator = EntropyScoreCalculator()
+    private val astComparator = ASTSubtreeComparator()
+    private val repetitionIntensityCalculator = LLMRepetitionIntensity()
 
     fun detect(code: String, filePath: String?): FuzzyMetrics {
         logger.debug("Tree-sitter fuzzy detect invoked for $filePath")
@@ -41,31 +43,56 @@ class TreeSitterFuzzyDetector {
         val methods = collectMethodNodes(root)
         val entropyScores = entropyCalculator.calculateEntropyScores(methods, root, source)
 
+        // Create both enhanced (shingle-based) and AST-based fingerprints
         val enhancedFingerprints = methods.map { node ->
             createEnhancedFingerprint(node, source)
         }
+        
+        val astFingerprints = methods.map { node ->
+            createASTFingerprint(node, source)
+        }
 
+        // Calculate similarity using both approaches
         val similarPairs = enhancedFingerprints.flatMapIndexed { index, fingerprint ->
             (index + 1 until enhancedFingerprints.size).mapNotNull { otherIndex ->
                 val other = enhancedFingerprints[otherIndex]
+                val astFp1 = astFingerprints[index]
+                val astFp2 = astFingerprints[otherIndex]
+                
                 val adaptiveThreshold = thresholdCalculator.calculateThreshold(
                     fingerprint, other, filePath
                 )
-                val similarity = fingerprint.getSimilarityScore(other)
+                
+                // Use shingle-based similarity as primary, AST-based as secondary
+                val shingleSimilarity = fingerprint.getSimilarityScore(other)
+                val structuralSimilarity = astFp1.getSimilarityScore(astFp2, astComparator)
+                val treeEditDistance = astFp1.getTreeEditDistance(astFp2, astComparator)
+                
+                // Combine similarities: 60% shingle, 40% structural
+                val combinedSimilarity = (shingleSimilarity * 0.6) + (structuralSimilarity * 0.4)
 
-                if (similarity >= adaptiveThreshold) {
+                if (combinedSimilarity >= adaptiveThreshold) {
                     MethodSimilarityPair(
                         firstMethod = fingerprint.name,
                         secondMethod = other.name,
-                        similarity = similarity,
+                        similarity = combinedSimilarity,
                         threshold = adaptiveThreshold,
-                        shingleBreakdown = createShingleBreakdown(fingerprint, other)
+                        shingleBreakdown = createShingleBreakdown(fingerprint, other),
+                        structuralSimilarity = structuralSimilarity,
+                        treeEditDistance = treeEditDistance
                     )
                 } else {
                     null
                 }
             }
         }
+
+        // Calculate LLM repetition intensity
+        val repetitionIntensity = repetitionIntensityCalculator.calculateIntensity(
+            similarPairs,
+            methods.size,
+            threshold = 0.5
+        )
 
         return FuzzyMetrics(
             duplicateMethodCount = similarPairs.size,
@@ -79,7 +106,9 @@ class TreeSitterFuzzyDetector {
             overDefensiveScore = entropyScores.overDefensiveScore,
             poorNamingScore = entropyScores.poorNamingScore,
             frameworkMisuseScore = entropyScores.frameworkMisuseScore,
-            excessiveDocumentationScore = entropyScores.excessiveDocumentationScore
+            excessiveDocumentationScore = entropyScores.excessiveDocumentationScore,
+            llmRepetitionIntensity = repetitionIntensity,
+            astBasedSimilarityEnabled = true
         )
     }
 
@@ -140,6 +169,22 @@ class TreeSitterFuzzyDetector {
             complexity = complexity,
             tokenCount = tokens.size,
             uniqueTokenCount = tokens.toSet().size
+        )
+    }
+
+    private fun createASTFingerprint(node: TSNode, source: String): ASTSubtreeFingerprint {
+        val name = extractMethodName(node, source)
+        val subtreeHash = astComparator.extractSubtreeHash(node, source)
+        val methodLength = calculateMethodLength(node, source)
+        val complexity = calculateMethodComplexity(node, source)
+        val tokens = normalizeNodeTokens(node, source)
+
+        return ASTSubtreeFingerprint(
+            name = name,
+            subtreeHash = subtreeHash,
+            methodLength = methodLength,
+            complexity = complexity,
+            tokenCount = tokens.size
         )
     }
 

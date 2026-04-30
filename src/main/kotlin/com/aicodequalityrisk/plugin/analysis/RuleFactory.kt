@@ -159,6 +159,21 @@ class RuleFactory {
             "ast.hasRepeatedMethodCalls" -> input.astMetrics.hasRepeatedMethodCalls
             "ast.hasHeavyBooleanLogic" -> input.astMetrics.hasHeavyBooleanLogic
             "ast.hasLongIfElseChain" -> input.astMetrics.hasLongIfElseChain
+            "ast.nullReturnCount" -> input.astMetrics.nullReturnCount
+            "ast.maxNullChainDepth" -> input.astMetrics.maxNullChainDepth
+            "ast.hasNullReturns" -> input.astMetrics.hasNullReturns
+            "ast.plaintextPasswordComparisonCount" -> input.astMetrics.plaintextPasswordComparisonCount
+            "ast.hardcodedSecretCount" -> input.astMetrics.hardcodedSecretCount
+            "ast.placeholderDomainCount" -> input.astMetrics.placeholderDomainCount
+            "ast.hasPlaintextPasswordComparison" -> input.astMetrics.hasPlaintextPasswordComparison
+            "ast.hasHardcodedSecrets" -> input.astMetrics.hasHardcodedSecrets
+            "ast.hasPlaceholderDomains" -> input.astMetrics.hasPlaceholderDomains
+            "corrupted.parseFailed" -> input.corruptedSourceMetrics.parseFailed
+            "corrupted.markdownTokenCount" -> input.corruptedSourceMetrics.markdownTokenCount
+            "corrupted.xmlFragmentCount" -> input.corruptedSourceMetrics.xmlFragmentCount
+            "corrupted.unbalancedBraceCount" -> input.corruptedSourceMetrics.unbalancedBraceCount
+            "corrupted.mixedLanguageDensity" -> input.corruptedSourceMetrics.mixedLanguageDensity
+            "corrupted.hasCorruptedContent" -> input.corruptedSourceMetrics.hasCorruptedContent
             else -> throw IllegalArgumentException("Unknown target: $target")
         }
     }
@@ -169,6 +184,7 @@ class RuleFactory {
             "DUPLICATION" -> Category.DUPLICATION
             "PERFORMANCE" -> Category.PERFORMANCE
             "SECURITY" -> Category.SECURITY
+            "CORRUPTED_SOURCE" -> Category.CORRUPTED_SOURCE
             else -> throw IllegalArgumentException("Unknown category: $category")
         }
     }

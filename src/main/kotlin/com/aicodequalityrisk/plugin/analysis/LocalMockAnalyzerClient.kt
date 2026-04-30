@@ -25,6 +25,7 @@ class LocalMockAnalyzerClient : AnalyzerClient {
         var duplicationScore = 0
         var performanceScore = 0
         var securityScore = 0
+        var corruptedSourceScore = 0
 
         val findings = rules.filter { it.matches(input) }.map { rule ->
             totalScore += rule.scoreDelta
@@ -33,6 +34,7 @@ class LocalMockAnalyzerClient : AnalyzerClient {
                 Category.DUPLICATION -> duplicationScore += rule.scoreDelta
                 Category.PERFORMANCE -> performanceScore += rule.scoreDelta
                 Category.SECURITY -> securityScore += rule.scoreDelta
+                Category.CORRUPTED_SOURCE -> corruptedSourceScore += rule.scoreDelta
             }
             val location = estimateLineNumber(input, rule.pattern)
             rule.finding.copy(filePath = input.filePath, lineNumber = location)
@@ -47,6 +49,26 @@ class LocalMockAnalyzerClient : AnalyzerClient {
                 detail = "Detected ${fuzzy.duplicateMethodCount} similar method body pair(s) with highest similarity ${"%.0f".format(fuzzy.maxSimilarityScore * 100)}%.",
                 severity = Severity.MEDIUM,
                 category = Category.DUPLICATION,
+                filePath = input.filePath
+            )
+        }
+
+        input.corruptedSourceMetrics.takeIf { it.hasCorruptedContent }?.let { corrupted ->
+            logger.info("Detected corrupted source content for ${input.filePath}")
+            val issues = mutableListOf<String>()
+            if (corrupted.parseFailed) issues.add("parse failure")
+            if (corrupted.markdownTokenCount > 0) issues.add("${corrupted.markdownTokenCount} markdown token(s)")
+            if (corrupted.xmlFragmentCount > 0) issues.add("${corrupted.xmlFragmentCount} XML fragment(s)")
+            if (corrupted.unbalancedBraceCount > 2) issues.add("${corrupted.unbalancedBraceCount} unbalanced brace(s)")
+            if (corrupted.mixedLanguageDensity > 0.3) issues.add("mixed language content")
+
+            totalScore += 25
+            corruptedSourceScore += 25
+            findings += Finding(
+                title = "Corrupted source content detected",
+                detail = "File contains non-code or corrupted content: ${issues.joinToString(", ")}. This may indicate AI-generated slop or incomplete code.",
+                severity = Severity.HIGH,
+                category = Category.CORRUPTED_SOURCE,
                 filePath = input.filePath
             )
         }
@@ -66,6 +88,7 @@ class LocalMockAnalyzerClient : AnalyzerClient {
         val boundedDuplication = duplicationScore.coerceIn(0, 100)
         val boundedPerformance = performanceScore.coerceIn(0, 100)
         val boundedSecurity = securityScore.coerceIn(0, 100)
+        val boundedCorruptedSource = corruptedSourceScore.coerceIn(0, 100)
         val boundedBoilerplateBloat = calculateBoilerplateBloatScore(ast)
         val boundedVerboseCommentSpam = calculateVerboseCommentSpamScore(ast)
         val boundedOverDefensive = calculateOverDefensiveScore(ast)
@@ -87,6 +110,7 @@ class LocalMockAnalyzerClient : AnalyzerClient {
             boundedDuplication,
             boundedPerformance,
             boundedSecurity,
+            boundedCorruptedSource,
             boundedBoilerplateBloat,
             boundedVerboseCommentSpam,
             boundedOverDefensive,
@@ -107,6 +131,7 @@ class LocalMockAnalyzerClient : AnalyzerClient {
             duplicationScore = boundedDuplication,
             performanceScore = boundedPerformance,
             securityScore = boundedSecurity,
+            corruptedSourceScore = boundedCorruptedSource,
             boilerplateBloatScore = boundedBoilerplateBloat,
             verboseCommentSpamScore = boundedVerboseCommentSpam,
             overDefensiveProgrammingScore = boundedOverDefensive,

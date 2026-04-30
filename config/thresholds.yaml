@@ -1,0 +1,23 @@
+# Thresholds for various code quality metrics
+# These values determine when a metric triggers a score
+
+# Null propagation thresholds
+null_return_count_threshold: 5
+null_chain_depth_threshold: 3
+null_method_percentage_threshold: 15
+
+# Complexity thresholds
+max_method_length_threshold: 50
+max_nesting_depth_threshold: 3
+cyclomatic_complexity_threshold: 10
+max_parameter_count_threshold: 4
+
+# Duplication thresholds
+duplicate_string_threshold: 1
+duplicate_number_threshold: 1
+duplicate_method_call_threshold: 1
+
+# Comment thresholds
+comment_to_code_ratio_threshold: 0.3
+line_comment_count_threshold: 10
+block_comment_count_threshold: 5

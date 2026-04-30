@@ -40,6 +40,42 @@ rules:
       detail: "Catching broad Exception can hide root causes and reduce recoverability."
       severity: "MEDIUM"
 
+  - name: "plaintext_password_comparison"
+    pattern:
+      type: "regex"
+      target: "fileSnapshot"
+      value: "\\.equals\\s*\\(.*(?:password|passwd|pwd|pass|secret|token)\\)|==\\s*(?:password|passwd|pwd|pass|secret|token)|(?:password|passwd|pwd|pass|secret|token)\\s*==|compareTo\\s*\\(.*(?:password|passwd|pwd|pass|secret|token)"
+    scoreDelta: 25
+    category: "SECURITY"
+    finding:
+      title: "Plaintext password comparison detected"
+      detail: "Comparing passwords using .equals() or == instead of using a proper password encoder is insecure. AI tends to copy this anti-pattern from insecure examples."
+      severity: "HIGH"
+
+  - name: "hardcoded_api_token"
+    pattern:
+      type: "regex"
+      target: "fileSnapshot"
+      value: "(sk-|pk-|AKIA|AIza|ya29|ghp_|gho_|ghu_|ghs_|ghr_)[A-Za-z0-9]{10,}|Bearer\\s+[A-Za-z0-9-._~+/]+=*|Basic\\s+[A-Za-z0-9+/]+=*"
+    scoreDelta: 30
+    category: "SECURITY"
+    finding:
+      title: "Hardcoded API token detected"
+      detail: "Hardcoded API keys, tokens, or credentials found in code. AI tends to copy insecure examples with embedded secrets."
+      severity: "HIGH"
+
+  - name: "placeholder_domain_in_code"
+    pattern:
+      type: "regex"
+      target: "fileSnapshot"
+      value: "(https?:\\/\\/)?(?:example\\.com|example\\.org|example\\.net|test\\.com|dev\\.com|staging\\.com)|localhost|127\\.0\\.0\\.1|0\\.0\\.0\\.0|\\[::1\\]"
+    scoreDelta: 20
+    category: "SECURITY"
+    finding:
+      title: "Placeholder domain in production code"
+      detail: "Placeholder domains like example.com or localhost found in code. AI often leaves these placeholders in production paths."
+      severity: "HIGH"
+
   - name: "thread_sleep"
     pattern:
       type: "regex"
@@ -337,4 +373,131 @@ rules:
     finding:
       title: "Large class state"
       detail: "Classes with many fields often indicate bloated data structures or excessive generated state."
+      severity: "MEDIUM"
+
+  - name: "plaintext_password_comparison_ast"
+    pattern:
+      type: "complex"
+      conditions:
+        - type: "boolean"
+          target: "ast.hasPlaintextPasswordComparison"
+          value: true
+    scoreDelta: 25
+    category: "SECURITY"
+    finding:
+      title: "Plaintext password comparison detected (AST)"
+      detail: "Password comparison using equals() or == detected. AI tends to copy this anti-pattern from insecure examples instead of using proper password encoders."
+      severity: "HIGH"
+
+  - name: "hardcoded_secret_ast"
+    pattern:
+      type: "complex"
+      conditions:
+        - type: "boolean"
+          target: "ast.hasHardcodedSecrets"
+          value: true
+    scoreDelta: 30
+    category: "SECURITY"
+    finding:
+      title: "Hardcoded secret detected (AST)"
+      detail: "Hardcoded API keys, tokens, or credentials found in code. AI consistently copies insecure examples with embedded secrets."
+      severity: "HIGH"
+
+  - name: "placeholder_domain_ast"
+    pattern:
+      type: "complex"
+      conditions:
+        - type: "boolean"
+          target: "ast.hasPlaceholderDomains"
+          value: true
+    scoreDelta: 20
+    category: "SECURITY"
+    finding:
+      title: "Placeholder domain detected (AST)"
+      detail: "Placeholder domains like example.com or localhost found in code. AI often leaves these placeholders in production paths."
+      severity: "HIGH"
+
+  - name: "corrupted_parse_failure"
+    pattern:
+      type: "complex"
+      conditions:
+        - type: "boolean"
+          target: "corrupted.parseFailed"
+          value: true
+    scoreDelta: 30
+    category: "CORRUPTED_SOURCE"
+    finding:
+      title: "Parse failure detected"
+      detail: "File could not be parsed by both JavaParser and Tree-sitter. This indicates corrupted or non-Java content in a Java file."
+      severity: "HIGH"
+
+  - name: "corrupted_markdown_tokens"
+    pattern:
+      type: "complex"
+      conditions:
+        - type: "numeric"
+          target: "corrupted.markdownTokenCount"
+          operator: ">"
+          value: 0
+    scoreDelta: 20
+    category: "CORRUPTED_SOURCE"
+    finding:
+      title: "Markdown tokens detected"
+      detail: "File contains markdown code fences or file path markers typical of AI-generated slop or incomplete code."
+      severity: "MEDIUM"
+
+  - name: "corrupted_unbalanced_braces"
+    pattern:
+      type: "complex"
+      conditions:
+        - type: "numeric"
+          target: "corrupted.unbalancedBraceCount"
+          operator: ">"
+          value: 2
+    scoreDelta: 25
+    category: "CORRUPTED_SOURCE"
+    finding:
+      title: "Unbalanced braces detected"
+      detail: "File has unbalanced braces, brackets, or parentheses indicating incomplete or malformed code."
+      severity: "HIGH"
+
+  - name: "corrupted_mixed_language"
+    pattern:
+      type: "complex"
+      conditions:
+        - type: "numeric"
+          target: "corrupted.mixedLanguageDensity"
+          operator: ">"
+          value: 0.3
+    scoreDelta: 18
+    category: "CORRUPTED_SOURCE"
+    finding:
+      title: "Mixed language content detected"
+      detail: "File contains high density of prose-like text mixed with code, typical of AI-generated explanations or incomplete code."
+      severity: "MEDIUM"
+
+  - name: "null_propagation_pattern"
+    pattern:
+      type: "regex"
+      target: "fileSnapshot"
+      value: "\\.orElse\\s*\\(\\s*null\\s*\\)"
+    scoreDelta: 15
+    category: "COMPLEXITY"
+    finding:
+      title: "Null propagation pattern detected"
+      detail: ".orElse(null) chains indicate nullable return flows that can propagate through the system. AI tends to generate architectures built on null-return flows."
+      severity: "MEDIUM"
+
+  - name: "null_propagation_ast"
+    pattern:
+      type: "complex"
+      conditions:
+        - type: "boolean"
+          target: "ast.hasNullReturns"
+          value: true
+    scoreDelta: 20
+    category: "COMPLEXITY"
+    finding:
+      title: "Excessive null returns detected (AST)"
+      detail: "Code contains excessive .orElse(null) patterns or long null propagation chains. This indicates systemic null handling issues often found in AI-generated code."
       severity: "MEDIUM"

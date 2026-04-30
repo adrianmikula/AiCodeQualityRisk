@@ -5,7 +5,9 @@ data class MethodSimilarityPair(
     val secondMethod: String,
     val similarity: Double,
     val threshold: Double = 0.62,
-    val shingleBreakdown: ShingleBreakdown? = null
+    val shingleBreakdown: ShingleBreakdown? = null,
+    val structuralSimilarity: Double = 0.0,
+    val treeEditDistance: Double = 0.0
 )
 
 data class FuzzyMetrics(
@@ -20,7 +22,9 @@ data class FuzzyMetrics(
     val overDefensiveScore: Double = 0.0,
     val poorNamingScore: Double = 0.0,
     val frameworkMisuseScore: Double = 0.0,
-    val excessiveDocumentationScore: Double = 0.0
+    val excessiveDocumentationScore: Double = 0.0,
+    val llmRepetitionIntensity: Double = 0.0,
+    val astBasedSimilarityEnabled: Boolean = false
 ) {
     val hasDuplicateMethodBodies: Boolean = duplicateMethodCount > 0
 

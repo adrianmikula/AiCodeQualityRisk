@@ -36,6 +36,17 @@ results/
 
 [View Results →](2026-04-29_14-41-19/comprehensive_explicit_vs_implicit/README.md)
 
+### 2026-04-29_18-00-32
+
+**Test:** saas_multi_tenant  
+**Description:** SaaS multi-tenant platform with 20 cross-cutting iteration features  
+**Projects:** 1 (completed), 1 (partial/crashed) / 5 (requested)  
+**Iterations:** 20 per project  
+**Duration:** ~65 minutes  
+**Key Finding:** Extreme code duplication with max similarity 1.0 (perfect duplicates detected)
+
+[View Results →](2026-04-29_18-00-32/saas_multi_tenant/README.md)
+
 ## CSV Schema
 
 ### project_metadata.csv
@@ -118,15 +129,25 @@ print(f"Avg Similarity: {meta['results_summary']['avg_max_similarity']:.3f}")
 
 ### Primary Metrics
 
-1. **Similar Method Pairs**: Methods with Jaccard similarity > 0.8
+1. **Similar Method Pairs**: Methods with combined similarity > threshold (default 0.5)
+   - Combines 60% shingle-based + 40% AST structural similarity
    - Indicates code duplication and lack of abstraction
    - Lower is better
+   - **Updated**: Now uses AST subtree comparison to reduce false positives
 
-2. **Max Similarity Score**: Highest similarity between any two methods
+2. **Max Similarity Score**: Highest combined similarity between any two methods
    - 1.0 = identical methods (worst)
+   - 0.5-0.8 = similar but not identical (expected range with AST-based approach)
    - < 0.5 = diverse implementations (best)
+   - **Updated**: Reduced from 0.95-1.0 range to 0.5-0.8 range due to AST-based comparison
 
-3. **Code Entropy**: Normalized disorder metric
+3. **LLM Repetition Intensity**: New metric measuring AI-generated repetition patterns
+   - 0.0-100.0 scale
+   - Higher = more repetitive AI-generated code
+   - Considers repetition coverage, average similarity, and pair density
+   - **New**: Replaces pure similarity count as primary repetition indicator
+
+4. **Code Entropy**: Normalized disorder metric
    - 0.0 = perfectly organized
    - 1.0 = completely chaotic
 

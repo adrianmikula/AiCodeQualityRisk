@@ -302,6 +302,7 @@ class McpServerService(
             appendLine("  - Poor Naming: ${result.poorNamingScore}")
             appendLine("  - Framework Misuse: ${result.frameworkMisuseScore}")
             appendLine("  - Excessive Documentation: ${result.excessiveDocumentationScore}")
+            appendLine("  - Null Returns: ${result.nullReturnScore}")
             appendLine()
 
             if (result.findings.isNotEmpty()) {

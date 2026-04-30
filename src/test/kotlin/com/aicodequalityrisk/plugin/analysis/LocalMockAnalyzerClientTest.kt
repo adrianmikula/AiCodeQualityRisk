@@ -282,4 +282,106 @@ class LocalMockAnalyzerClientTest {
 
         assertTrue(result.excessiveDocumentationScore > 0, "excessiveDocumentationScore should be > 0 when excessive javadocs exist")
     }
+
+    @Test
+    fun `plaintext password comparison should produce high-severity finding`() {
+        val result = client.analyze(
+            AnalysisInput(
+                projectPath = "/tmp",
+                filePath = "/tmp/Test.java",
+                trigger = TriggerType.EDIT,
+                diffText = "+if (input.equals(password)) { }",
+                fileSnapshot = "if (input.equals(password)) { }",
+                astMetrics = ASTMetrics()
+            )
+        )
+
+        assertTrue(result.findings.any { it.title.contains("Plaintext password comparison detected") }, "Should detect plaintext password comparison")
+        assertTrue(result.findings.any { it.severity == Severity.HIGH }, "Should have HIGH severity")
+    }
+
+    @Test
+    fun `hardcoded API token should produce high-severity finding`() {
+        val result = client.analyze(
+            AnalysisInput(
+                projectPath = "/tmp",
+                filePath = "/tmp/Test.java",
+                trigger = TriggerType.EDIT,
+                diffText = "+String apiKey = \"sk-1234567890abcdef\";",
+                fileSnapshot = "String apiKey = \"sk-1234567890abcdef\";",
+                astMetrics = ASTMetrics()
+            )
+        )
+
+        assertTrue(result.findings.any { it.title.contains("Hardcoded API token detected") }, "Should detect hardcoded API token")
+        assertTrue(result.findings.any { it.severity == Severity.HIGH }, "Should have HIGH severity")
+    }
+
+    @Test
+    fun `placeholder domain should produce high-severity finding`() {
+        val result = client.analyze(
+            AnalysisInput(
+                projectPath = "/tmp",
+                filePath = "/tmp/Test.java",
+                trigger = TriggerType.EDIT,
+                diffText = "+String apiUrl = \"https://example.com/api\";",
+                fileSnapshot = "String apiUrl = \"https://example.com/api\";",
+                astMetrics = ASTMetrics()
+            )
+        )
+
+        assertTrue(result.findings.any { it.title.contains("Placeholder domain") }, "Should detect placeholder domain")
+        assertTrue(result.findings.any { it.severity == Severity.HIGH }, "Should have HIGH severity")
+    }
+
+    @Test
+    fun `AST plaintext password comparison should trigger security finding`() {
+        val result = client.analyze(
+            AnalysisInput(
+                projectPath = "/tmp",
+                filePath = "/tmp/Test.java",
+                trigger = TriggerType.EDIT,
+                diffText = "+if (user.password.equals(input)) { }",
+                fileSnapshot = "if (user.password.equals(input)) { }",
+                astMetrics = ASTMetrics(plaintextPasswordComparisonCount = 1, hasPlaintextPasswordComparison = true)
+            )
+        )
+
+        assertTrue(result.securityScore > 0, "securityScore should be > 0 when plaintext password comparison detected")
+        assertTrue(result.findings.any { it.title.contains("Plaintext password comparison") }, "Should detect via AST")
+    }
+
+    @Test
+    fun `AST hardcoded secret should trigger security finding`() {
+        val result = client.analyze(
+            AnalysisInput(
+                projectPath = "/tmp",
+                filePath = "/tmp/Test.java",
+                trigger = TriggerType.EDIT,
+                diffText = "+String secret = \"sk-1234567890\";",
+                fileSnapshot = "String secret = \"sk-1234567890\";",
+                astMetrics = ASTMetrics(hardcodedSecretCount = 1, hasHardcodedSecrets = true)
+            )
+        )
+
+        assertTrue(result.securityScore > 0, "securityScore should be > 0 when hardcoded secret detected")
+        assertTrue(result.findings.any { it.title.contains("Hardcoded secret") }, "Should detect via AST")
+    }
+
+    @Test
+    fun `AST placeholder domain should trigger security finding`() {
+        val result = client.analyze(
+            AnalysisInput(
+                projectPath = "/tmp",
+                filePath = "/tmp/Test.java",
+                trigger = TriggerType.EDIT,
+                diffText = "+String url = \"http://localhost:8080\";",
+                fileSnapshot = "String url = \"http://localhost:8080\";",
+                astMetrics = ASTMetrics(placeholderDomainCount = 1, hasPlaceholderDomains = true)
+            )
+        )
+
+        assertTrue(result.securityScore > 0, "securityScore should be > 0 when placeholder domain detected")
+        assertTrue(result.findings.any { it.title.contains("Placeholder domain") }, "Should detect via AST")
+    }
 }

@@ -1,0 +1,47 @@
+{
+  "name": "saas-multi-tenant-degradation-test",
+  "outputDir": "workspace/saas-multi-tenant-generated",
+  "model": "opencode/minimax-m2.5-free",
+  "maxRetries": 3,
+  "retryDelayMs": 2000,
+  "promptTemplates": [
+    {
+      "name": "saas_multi_tenant",
+      "domain": "Multi-tenant SaaS platform",
+      "architecture": "Spring Boot REST API with layered architecture",
+      "features": [
+        "User management",
+        "Organization / tenant management",
+        "Subscription / billing (simplified)",
+        "Role-based access control",
+        "DTOs for API boundaries",
+        "Validation annotations",
+        "Clear package structure"
+      ],
+      "iterationFeatures": [
+        "Add JWT authentication with organization context",
+        "Enforce role-based access control across endpoints",
+        "Add audit logging for user and organization actions",
+        "Add subscription plan restrictions (feature gating)",
+        "Add caching for frequently accessed organization data",
+        "Add pagination and filtering across all list endpoints",
+        "Add global exception handling",
+        "Add API usage tracking per organization",
+        "Add rate limiting per tenant",
+        "Add structured logging with request correlation IDs",
+        "Add soft delete for users and organizations",
+        "Add data isolation safeguards between tenants",
+        "Add background jobs (e.g. subscription checks)",
+        "Add integration tests for key flows",
+        "Refactor for scalability and modularity",
+        "Add webhook support for organization events",
+        "Add data export functionality for tenant data",
+        "Add customizable email templates per organization",
+        "Add API versioning support",
+        "Add organization-level customization settings"
+      ]
+    }
+  ],
+  "modes": ["ITERATIVE"],
+  "variationsPerPrompt": 5
+}

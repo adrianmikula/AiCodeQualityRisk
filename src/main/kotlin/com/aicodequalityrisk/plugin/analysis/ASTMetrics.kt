@@ -34,5 +34,14 @@ data class ASTMetrics(
     val hasHeavyBooleanLogic: Boolean = false,
     val hasLongIfElseChain: Boolean = false,
     val hasExcessiveComments: Boolean = false,
-    val hasVerboseComments: Boolean = false
+    val hasVerboseComments: Boolean = false,
+    val nullReturnCount: Int = 0,
+    val maxNullChainDepth: Int = 0,
+    val hasNullReturns: Boolean = false,
+    val plaintextPasswordComparisonCount: Int = 0,
+    val hardcodedSecretCount: Int = 0,
+    val placeholderDomainCount: Int = 0,
+    val hasPlaintextPasswordComparison: Boolean = false,
+    val hasHardcodedSecrets: Boolean = false,
+    val hasPlaceholderDomains: Boolean = false
 )

@@ -2,6 +2,7 @@ package com.aicodequalityrisk.plugin.model
 
 import com.aicodequalityrisk.plugin.analysis.ASTMetrics
 import com.aicodequalityrisk.plugin.analysis.Category
+import com.aicodequalityrisk.plugin.analysis.CorruptedSourceMetrics
 import com.aicodequalityrisk.plugin.analysis.FuzzyMetrics
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -15,7 +16,8 @@ data class AnalysisInput(
     val diffText: String,
     val fileSnapshot: String,
     val astMetrics: ASTMetrics = ASTMetrics(),
-    val fuzzyMetrics: FuzzyMetrics = FuzzyMetrics()
+    val fuzzyMetrics: FuzzyMetrics = FuzzyMetrics(),
+    val corruptedSourceMetrics: CorruptedSourceMetrics = CorruptedSourceMetrics()
 )
 
 enum class TriggerType {
@@ -31,6 +33,7 @@ data class RiskResult(
     val duplicationScore: Int = 0,
     val performanceScore: Int = 0,
     val securityScore: Int = 0,
+    val corruptedSourceScore: Int = 0,
     val boilerplateBloatScore: Int = 0,
     val verboseCommentSpamScore: Int = 0,
     val overDefensiveProgrammingScore: Int = 0,
@@ -41,13 +44,14 @@ data class RiskResult(
     val poorNamingScore: Int = 0,
     val frameworkMisuseScore: Int = 0,
     val excessiveDocumentationScore: Int = 0,
+    val nullReturnScore: Int = 0,
     val findings: List<Finding> = emptyList(),
     val explanations: List<String> = emptyList(),
     val sourceFilePath: String? = null,
     val timestamp: Long = 0L
 ) {
     val complexityConsolidated: Int
-        get() = listOf(complexityScore, deepNestingScore, complexBooleanLogicScore, overDefensiveProgrammingScore).average().toInt()
+        get() = listOf(complexityScore, deepNestingScore, complexBooleanLogicScore, overDefensiveProgrammingScore, nullReturnScore).average().toInt()
 
     val duplicationConsolidated: Int
         get() = listOf(duplicationScore, boilerplateBloatScore).average().toInt()
@@ -57,6 +61,9 @@ data class RiskResult(
 
     val securityConsolidated: Int
         get() = listOf(securityScore, verboseCommentSpamScore, excessiveDocumentationScore).average().toInt()
+
+    val corruptedSourceConsolidated: Int
+        get() = corruptedSourceScore
     companion object {
         fun fromJson(json: String): RiskResult {
             val map = parseJson(json)
@@ -66,6 +73,7 @@ data class RiskResult(
                 duplicationScore = (map["duplicationScore"] as? Double)?.toInt() ?: 0,
                 performanceScore = (map["performanceScore"] as? Double)?.toInt() ?: 0,
                 securityScore = (map["securityScore"] as? Double)?.toInt() ?: 0,
+                corruptedSourceScore = (map["corruptedSourceScore"] as? Double)?.toInt() ?: 0,
                 boilerplateBloatScore = (map["boilerplateBloatScore"] as? Double)?.toInt() ?: 0,
                 verboseCommentSpamScore = (map["verboseCommentSpamScore"] as? Double)?.toInt() ?: 0,
                 overDefensiveProgrammingScore = (map["overDefensiveProgrammingScore"] as? Double)?.toInt() ?: 0,
@@ -76,6 +84,7 @@ data class RiskResult(
                 poorNamingScore = (map["poorNamingScore"] as? Double)?.toInt() ?: 0,
                 frameworkMisuseScore = (map["frameworkMisuseScore"] as? Double)?.toInt() ?: 0,
                 excessiveDocumentationScore = (map["excessiveDocumentationScore"] as? Double)?.toInt() ?: 0,
+                nullReturnScore = (map["nullReturnScore"] as? Double)?.toInt() ?: 0,
                 findings = (map["findings"] as? List<*>)?.mapNotNull { item ->
                     (item as? Map<*, *>)?.let { parseFinding(it) }
                 } ?: emptyList(),
@@ -176,6 +185,7 @@ data class RiskResult(
         sb.append("\"duplicationScore\":${duplicationScore},")
         sb.append("\"performanceScore\":${performanceScore},")
         sb.append("\"securityScore\":${securityScore},")
+        sb.append("\"corruptedSourceScore\":${corruptedSourceScore},")
         sb.append("\"boilerplateBloatScore\":${boilerplateBloatScore},")
         sb.append("\"verboseCommentSpamScore\":${verboseCommentSpamScore},")
         sb.append("\"overDefensiveProgrammingScore\":${overDefensiveProgrammingScore},")
@@ -186,6 +196,7 @@ data class RiskResult(
         sb.append("\"poorNamingScore\":${poorNamingScore},")
         sb.append("\"frameworkMisuseScore\":${frameworkMisuseScore},")
         sb.append("\"excessiveDocumentationScore\":${excessiveDocumentationScore},")
+        sb.append("\"nullReturnScore\":${nullReturnScore},")
         sb.append("\"findings\":[")
         sb.append(findings.joinToString(",") { it.toJson() })
         sb.append("],")
