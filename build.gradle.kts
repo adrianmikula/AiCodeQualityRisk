@@ -60,13 +60,22 @@ tasks {
     }
 
     patchPluginXml {
-        sinceBuild.set(providers.gradleProperty("intellij.sinceBuild").orElse("242"))
+        sinceBuild.set(providers.gradleProperty("intellij.sinceBuild").orElse("231"))
         untilBuild.set(providers.gradleProperty("intellij.untilBuild").let { provider { null } })
     }
     
     run<JavaExec> {
         // Disable mock mode to use real LLM (Ollama)
         jvmArgs("-Dforce.mock.mode=false")
+    }
+
+    // Comprehensive cleanup: build + sandbox + Gradle caches
+    register<Delete>("cleanAll") {
+        group = "build"
+        description = "Clean build artifacts, sandbox, and Gradle caches for a fresh rebuild"
+        delete(layout.buildDirectory)
+        delete(layout.projectDirectory.dir(".intellijPlatform"))
+        delete(layout.projectDirectory.dir(".gradle"))
     }
 }
 

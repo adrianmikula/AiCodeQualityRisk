@@ -1,4 +1,4 @@
-<idea-plugin xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://plugins.jetbrains.com/schemas/plugin/2/plugin.xsd" icon="icons/pluginIcon_32.png">
+<idea-plugin xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://plugins.jetbrains.com/schemas/plugin/2/plugin.xsd" icon="icons/expui/pluginIcon.svg">
     <!-- Freemium Monetization Parameters in product-descriptor  element: -->
 
     <!-- code: Your Product Code must:
@@ -19,12 +19,12 @@
 
     <product-descriptor
         code="PAICODEQUALITY"
-        release-date="20260101"
+        release-date="20260501"
         release-version="11"
         optional="true"/>
 
     <!-- idea-version: Exclude the until-build attribute entirely, giving open-ended compatibility with all future IntelliJ versions. -->
-    <idea-version since-build="243.*" />
+    <idea-version since-build="231.*" />
 
     <!-- version: increment this for every minor release. The first 2 numbers should match the release-version -->
     <version>1.1.0</version>
@@ -103,6 +103,9 @@
 
         <!-- Editor Integration -->
         <linePainter implementation="com.aicodequalityrisk.plugin.editor.InlineRiskLinePainter"/>
+
+        <!-- Icon Mapper for New UI -->
+        <iconMapper mappingFile="EntropyGuardIconMappings.json"/>
     </extensions>
 
     <actions>
@@ -112,7 +115,7 @@
                 class="com.aicodequalityrisk.plugin.actions.AnalyzeCurrentFileAction"
                 text="Analyze Current File Risk"
                 description="Run AI code risk analysis on the current file"
-                icon="icons/pluginIcon_16.png">
+                 icon="AllIcons.General.Inspection">
             <add-to-group group-id="EditorPopupMenu" anchor="last"/>
         </action>
 
@@ -121,7 +124,7 @@
                 class="com.aicodequalityrisk.plugin.actions.AnalyzeProjectAction"
                 text="Analyze Project Risk"
                 description="Run comprehensive AI risk analysis on the entire project"
-                icon="icons/pluginIcon_16.png">
+                 icon="AllIcons.General.Inspection">
             <add-to-group group-id="ToolsMenu" anchor="last"/>
         </action>
     </actions>

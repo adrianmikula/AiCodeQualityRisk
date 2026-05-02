@@ -1,0 +1,24 @@
+{
+  "iconMappings": [
+    {
+      "iconId": "/icons/pluginIcon.svg",
+      "iconPath": "/icons/expui/pluginIcon.svg"
+    },
+    {
+      "iconId": "/icons/pluginIcon_16.png",
+      "iconPath": "/icons/expui/pluginIcon_toolbar.svg"
+    },
+    {
+      "iconId": "/icons/pluginIcon_32.png",
+      "iconPath": "/icons/expui/pluginIcon@20x20.svg"
+    },
+    {
+      "iconId": "/icons/pluginIcon_64.png",
+      "iconPath": "/icons/expui/pluginIcon@20x20.svg"
+    },
+    {
+      "iconId": "/icons/pluginIcon_128.png",
+      "iconPath": "/icons/expui/pluginIcon@20x20.svg"
+    }
+  ]
+}

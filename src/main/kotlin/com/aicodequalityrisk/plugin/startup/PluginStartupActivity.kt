@@ -70,7 +70,8 @@ class PluginStartupActivity : ProjectActivity {
                 val toolWindow = toolWindowManager.registerToolWindow(
                     RegisterToolWindowTask.notClosable(
                         id = "AI Code Risk",
-                        anchor = ToolWindowAnchor.RIGHT
+                        anchor = ToolWindowAnchor.RIGHT,
+                        icon = com.intellij.openapi.util.IconLoader.getIcon("/icons/expui/pluginIcon@20x20.svg", javaClass)
                     )
                 )
                 // Add content directly to the tool window

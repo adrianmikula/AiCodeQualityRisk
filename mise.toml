@@ -21,6 +21,14 @@ run = "gradle buildPlugin"
 description = "Clean build outputs"
 run = "gradle clean"
 
+[tasks.clean-sandbox]
+description = "Clean IntelliJPlatform sandbox (plugin deployment cache)"
+run = "gradle cleanSandbox"
+
+[tasks.clean-all]
+description = "Nuclear option: clean build, sandbox, and Gradle caches"
+run = "gradle cleanAll"
+
 [tasks.run]
 description = "Run the Kotlin application"
 run = "gradle run"
