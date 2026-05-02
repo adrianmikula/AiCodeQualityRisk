@@ -31,7 +31,7 @@ These are **not things you can defer to traditional static analysis**. If your t
 * ✅ Created `CorruptedSourceDetector` with heuristics:
   * Markdown tokens (``` , `<file path=`)
   * Mixed language density (Java + XML + prose)
-  * Unbalanced braces / syntax anomalies
+  * Unbalanced braces / syntax anomalies (threshold: any unbalanced braces trigger, lowered from >2)
   * Parse failure detection (both JavaParser and Tree-sitter)
 * ✅ Added `CorruptedSourceMetrics` to `AnalysisInput`
 * ✅ Added `corruptedSourceScore` to `RiskResult`
@@ -188,9 +188,12 @@ But measuring it poorly.
 
 **Solution Implemented:**
 
-* **AST subtree comparison** - Compares method body AST structures using tree edit distance
-* **Combined similarity scoring** - 60% shingle-based + 40% structural similarity
-* **LLM repetition intensity** - New metric (0-100 scale) measuring repetition patterns
+* **Multi-granular shingling** - Replaced single-size character shingles with 4 token shingle sizes (2, 4, 6, 8) using weighted Jaccard similarity
+* **Adaptive similarity thresholds** - Base threshold 0.62 dynamically adjusted by method length, complexity, and project baseline (range: 0.4–0.85)
+* **AST subtree comparison** - Compares method body AST structures using tree edit distance (40% weight in combined score)
+* **Combined similarity scoring** - 60% multi-granular shingle + 40% structural similarity
+* **LLM repetition intensity** - Enhanced metric (0-100 scale) measuring repetition coverage, average similarity, and pair density; supports class-level intensity and trend tracking across iterations
+* **Entropy score detection** - 6 new AI-specific degradation signals: boilerplate bloat, verbose comment spam, over-defensive programming, poor naming, framework misuse, excessive documentation
 * **Reduced false positives** - Similarity scores now in 0.5-0.8 range instead of 0.95-1.0
 
 **Key insight:**
@@ -305,9 +308,10 @@ A system that answers:
 
 ### Layer 1: Structural Degradation (you already started)
 
-* Repetition
+* Repetition (multi-granular shingle + AST subtree comparison)
 * Lack of abstraction
 * Boilerplate explosion
+* Entropy-based AI degradation signals (boilerplate bloat, verbose comments, poor naming, framework misuse, over-defensive programming, excessive documentation)
 
 ### Layer 2: Semantic Degradation (you’re missing)
 
