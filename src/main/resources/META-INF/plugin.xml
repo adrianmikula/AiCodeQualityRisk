@@ -31,7 +31,7 @@
 
     <name>EntropyGuard</name>
     <id>com.aicodequalityrisk.plugin</id>
-    <vendor email="adrian.m@tuta.io" name="Adrian M" url="https://github.com/adrianmikula/AiCodeQualityRisk">EntropyGuard</vendor>
+    <vendor email="adrian.m@tuta.io" name="Adrian M" url="https://github.com/adrianmikula/EntropyGuard">EntropyGuard</vendor>
     <category>Code Analysis</category>
 
 
@@ -43,46 +43,107 @@
     <h3>Why EntropyGuard?</h3>
     <p>AI-generated code is not broken—it gradually increases system entropy. EntropyGuard detects this hidden structural degradation, helping developers maintain codebase health and prevent technical debt from compounding silently.</p>
 
+    <h3>Detection Categories</h3>
+    <p>The plugin detects entropy across <b>5 major categories</b> with <b>15 sub-categories</b>:</p>
+
+    <h4>1. Complexity (8 rules)</h4>
+    <ul>
+    <li>Long methods (>50 lines)</li>
+    <li>Deep nesting (>3 levels)</li>
+    <li>High cyclomatic complexity (>10)</li>
+    <li>Heavy boolean logic (>3 operators)</li>
+    <li>Long if/else-if chains (>2 branches)</li>
+    <li>Large class state (>8 fields)</li>
+    <li>Null propagation patterns (.orElse(null))</li>
+    <li>Excessive null returns</li>
+    </ul>
+
+    <h4>2. Duplication (4 rules)</h4>
+    <ul>
+    <li>Duplicate string literals (>2 occurrences)</li>
+    <li>Duplicate number literals (>2 occurrences)</li>
+    <li>Repeated method calls (>3 duplicates)</li>
+    <li>Large method signatures (>4 parameters)</li>
+    </ul>
+
+    <h4>3. Performance (2 rules)</h4>
+    <ul>
+    <li>Thread.sleep calls</li>
+    <li>Magic number usage (>3 occurrences)</li>
+    </ul>
+
+    <h4>4. Security (10 rules)</h4>
+    <ul>
+    <li>Null assertion (!! operator) — HIGH severity</li>
+    <li>Broad exception catch</li>
+    <li>Empty catch blocks</li>
+    <li>Plaintext password comparison</li>
+    <li>Hardcoded API tokens (AWS, GitHub, Google, Stripe, JWT, Bearer, Basic auth)</li>
+    <li>Placeholder domains (example.com, localhost, etc.)</li>
+    <li>Hardcoded configuration (URLs, passwords, endpoints)</li>
+    <li>Broad exception catch (AST)</li>
+    <li>Empty catch block (AST)</li>
+    <li>Hardcoded secrets (AST)</li>
+    </ul>
+
+    <h4>5. Corruption (4 rules) — New in v1.1.0</h4>
+    <ul>
+    <li>Parse failure (both JavaParser + Tree-sitter fail)</li>
+    <li>Markdown tokens (code fences, file markers)</li>
+    <li>Unbalanced braces (>2)</li>
+    <li>Mixed language content (>30% prose density)</li>
+    </ul>
+
+    <h4>Additional Sub-Categories (entropy-based detection)</h4>
+    <ul>
+    <li>Boilerplate Bloat (getter/setter ratio, avg method length)</li>
+    <li>Verbose Comment Spam (comment-to-code ratio)</li>
+    <li>Over-Defensive Programming (null check density)</li>
+    <li>Poor Naming (single-letter identifiers)</li>
+    <li>Framework Misuse (exception swallowing patterns)</li>
+    <li>Excessive Documentation (javadoc-to-method ratio)</li>
+    </ul>
+
     <h3>Key Features</h3>
     <ul>
     <li>- <b>Real-time Entropy Detection</b> - Analyze code changes as you type</li>
-    <li>- <b>Entropy Scoring</b> - Get instant entropy scores for your code modifications</li>
+    <li>- <b>Entropy Scoring</b> - Get instant entropy scores (0-100) per category</li>
     <li>- <b>Security Detection</b> - Identify potential security vulnerabilities</li>
     <li>- <b>Code Quality Insights</b> - Receive suggestions for code improvements</li>
     <li>- <b>Inline Feedback</b> - See issues directly in your editor</li>
-    <li>- <b>Comprehensive Reports</b> - Detailed analysis reports with findings</li>
-    <li>- <b>Performance Analysis</b> - Detect performance bottlenecks and inefficiencies</li>
+    <li>- <b>Comprehensive Reports</b> - Detailed analysis with up to 7 prioritized findings</li>
+    <li>- <b>Performance Analysis</b> - Detect performance bottlenecks</li>
     <li>- <b>Best Practices</b> - Ensure adherence to coding standards</li>
     </ul>
 
     <h3>Supported Technologies</h3>
     <ul>
-    <li><b>Languages:</b> Java (full AST analysis), Kotlin, Python, JavaScript, TypeScript, and more (diff-based analysis)</li>
+    <li><b>Languages:</b> Java (full AST analysis), Kotlin, Python, JavaScript, TypeScript (diff-based)</li>
     <li><b>Frameworks:</b> Spring, React, Angular, Vue.js, Django, Flask</li>
     <li><b>Build Tools:</b> Maven, Gradle, npm, yarn, pip</li>
-    <li><b>IDE Integration:</b> IntelliJ IDEA 2023.3+ (Community & Ultimate)</li>
+    <li><b>IDE Integration:</b> IntelliJ IDEA 2023.3+</li>
     </ul>
 
     <h3>Getting Started</h3>
     <ol>
-    <li><b>Install the Plugin:</b> Install from JetBrains Marketplace</li>
-    <li><b>Enable Analysis:</b> The plugin automatically starts analyzing your code changes</li>
-    <li><b>View Results:</b> Check the EntropyGuard tool window for analysis results</li>
-    <li><b>Review Findings:</b> Click on issues to see detailed explanations and suggestions</li>
+    <li><b>Install:</b> Install from JetBrains Marketplace</li>
+    <li><b>Auto-analysis:</b> Plugin analyzes code changes automatically</li>
+    <li><b>View Results:</b> Check the EntropyGuard tool window</li>
+    <li><b>Review Findings:</b> Click issues to see details and jump to source</li>
     </ol>
 
-    <h3>Technical Information</h3>
+    <h3>Technical Stack</h3>
     <ul>
-    <li><b>Architecture:</b> Built on IntelliJ Platform with advanced AI analysis engines</li>
-    <li><b>Analysis:</b> Real-time static and dynamic code analysis</li>
-    <li><b>Compatibility:</b> Works with IntelliJ IDEA 2023.3+ (Community & Ultimate)</li>
-    <li><b>AI Integration:</b> Powered by state-of-the-art machine learning models</li>
+    <li><b>Java Parser:</b> Full AST analysis for Java</li>
+    <li><b>Tree-sitter:</b> Fuzzy duplicate detection + multi-language support</li>
+    <li><b>Kotlin + kotlinx.serialization + SnakeYAML</b></li>
+    <li><b>IntelliJ Platform SDK</b> (243.*+)</li>
     </ul>
 
     <h3>Free vs Premium</h3>
     <ul>
-    <li><b>Free:</b> 7 day trial</li>
-    <li><b>Premium:</b> unlimited usage</li>
+    <li><b>Free:</b> 7-day trial</li>
+    <li><b>Premium:</b> Unlimited usage (requires license)</li>
     </ul>
     ]]></description>
 
