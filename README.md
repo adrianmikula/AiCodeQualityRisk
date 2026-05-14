@@ -1,10 +1,10 @@
-# EntropyGuard — AI Code Entropy Detection
+# SlopGuard [formerly EntropyGuard] — AI Code Quality Protection
 
-EntropyGuard is an IntelliJ IDEA plugin that analyzes in-progress code changes in real-time to identify structural disorder (entropy) introduced by AI-generated code. It detects hidden degradation that compounds over time without obvious failures.
+SlopGuard [formerly EntropyGuard] is an IntelliJ IDEA plugin that catches the hidden quality issues introduced by AI-generated code. It detects security vulnerabilities, duplicate boilerplate, and structural decay that compound over time without obvious failures.
 
 ## Overview
 
-AI-generated code isn't broken—it gradually increases system entropy. EntropyGuard detects this structural degradation, helping maintain codebase health and prevent silently compounding technical debt.
+AI-generated code isn't broken—it's slowly rotting your codebase. Each AI-generated commit adds hidden technical debt: hardcoded secrets, repetitive boilerplate, and anti-patterns that don't fail immediately but make your code harder to maintain, debug, and extend over time. SlopGuard [formerly EntropyGuard] catches these issues before they compound.
 
 ## Core Capabilities
 
@@ -94,7 +94,7 @@ AI-generated code isn't broken—it gradually increases system entropy. EntropyG
 
 ### From JetBrains Marketplace
 1. Open IntelliJ IDEA Settings/Preferences → Plugins
-2. Search for "EntropyGuard"
+2. Search for "SlopGuard [formerly EntropyGuard]" or "EntropyGuard"
 3. Click Install
 4. Restart IDE
 
@@ -223,6 +223,10 @@ This plugin is proprietary software. Free 7-day trial; unlimited usage requires 
 
 ## Change Log
 
+### v1.1.1 — 2026-05-14
+- Updated marketing copy to better address AI-generated code quality issues
+- Improved description clarity with concrete examples of detected issues
+
 ### v1.1.0 — 2026-04-30
 - Renamed plugin to **EntropyGuard**
 - Added **Corrupted Source** detection as a new top-level category
@@ -246,7 +250,7 @@ This plugin is proprietary software. Free 7-day trial; unlimited usage requires 
 
 ### v1.0.0 — 2026-04-12
 - Initial IntelliJ Marketplace release
-- Real-time code entropy analysis
+- Real-time code quality analysis for AI-generated code
 - Security vulnerability detection
 - Code quality insights + suggestions
 - Inline editor feedback

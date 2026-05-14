@@ -1,0 +1,195 @@
+<idea-plugin xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://plugins.jetbrains.com/schemas/plugin/2/plugin.xsd" icon="pluginIcon.svg">
+  <!-- Freemium Monetization Parameters in product-descriptor  element: -->
+  <!-- code: Your Product Code must:
+            Start with the letter P.
+            Be no shorter than 4 characters.
+            Be no longer than 15 characters.
+            NOT contain any numbers or special symbols.
+            Contain only CAPITAL LETTERS. -->
+  <!-- release-date: date of the major version release, written in the YYYYMMDD format (type: integer) -->
+  <!-- release-version: The number should contain at least 2 digits, as it will be split into 2 numbers,
+            the second of which will contain only one digit.
+            This is different from the version of the plugin, as this is a version number of the major
+            release (i.e. the release that happened on release-date). -->
+  <!-- optional: This should be set to true if you would like to add the free functionality to your plugin. -->
+  <product-descriptor code="PAICODEQUALITY" release-date="20260101" release-version="11" optional="true" />
+  <!-- idea-version: Exclude the until-build attribute entirely, giving open-ended compatibility with all future IntelliJ versions. -->
+  <idea-version since-build="242" />
+  <!-- version: increment this for every minor release. The first 2 numbers should match the release-version -->
+  <version>1.1.1</version>
+  <name>EntropyGuard</name>
+  <id>com.aicodequalityrisk.plugin</id>
+  <vendor email="adrian.m@tuta.io" name="Adrian M" url="https://github.com/adrianmikula/EntropyGuard">EntropyGuard</vendor>
+  <category>Code Analysis</category>
+  <description><![CDATA[<h2>EntropyGuard — AI Code Entropy Detection</h2>
+
+    <p>Detect structural disorder in your codebase before it compounds. EntropyGuard analyzes in-progress code changes in real-time to identify how AI-generated code introduces hidden entropy—structural disorder that increases over time without obvious failure.</p>
+
+    <h3>Why EntropyGuard?</h3>
+    <p>AI-generated code is not broken—it gradually increases system entropy. EntropyGuard detects this hidden structural degradation, helping developers maintain codebase health and prevent technical debt from compounding silently.</p>
+
+    <h3>Detection Categories</h3>
+    <p>The plugin detects entropy across <b>5 major categories</b> with <b>15 sub-categories</b>:</p>
+
+    <h4>1. Complexity (8 rules)</h4>
+    <ul>
+    <li>Long methods (>50 lines)</li>
+    <li>Deep nesting (>3 levels)</li>
+    <li>High cyclomatic complexity (>10)</li>
+    <li>Heavy boolean logic (>3 operators)</li>
+    <li>Long if/else-if chains (>2 branches)</li>
+    <li>Large class state (>8 fields)</li>
+    <li>Null propagation patterns (.orElse(null))</li>
+    <li>Excessive null returns</li>
+    </ul>
+
+    <h4>2. Duplication (4 rules)</h4>
+    <ul>
+    <li>Duplicate string literals (>2 occurrences)</li>
+    <li>Duplicate number literals (>2 occurrences)</li>
+    <li>Repeated method calls (>3 duplicates)</li>
+    <li>Large method signatures (>4 parameters)</li>
+    </ul>
+
+    <h4>3. Performance (2 rules)</h4>
+    <ul>
+    <li>Thread.sleep calls</li>
+    <li>Magic number usage (>3 occurrences)</li>
+    </ul>
+
+    <h4>4. Security (10 rules)</h4>
+    <ul>
+    <li>Null assertion (!! operator) — HIGH severity</li>
+    <li>Broad exception catch</li>
+    <li>Empty catch blocks</li>
+    <li>Plaintext password comparison</li>
+    <li>Hardcoded API tokens (AWS, GitHub, Google, Stripe, JWT, Bearer, Basic auth)</li>
+    <li>Placeholder domains (example.com, localhost, etc.)</li>
+    <li>Hardcoded configuration (URLs, passwords, endpoints)</li>
+    <li>Broad exception catch (AST)</li>
+    <li>Empty catch block (AST)</li>
+    <li>Hardcoded secrets (AST)</li>
+    </ul>
+
+    <h4>5. Corruption (4 rules) — New in v1.1.0</h4>
+    <ul>
+    <li>Parse failure (both JavaParser + Tree-sitter fail)</li>
+    <li>Markdown tokens (code fences, file markers)</li>
+    <li>Unbalanced braces (>2)</li>
+    <li>Mixed language content (>30% prose density)</li>
+    </ul>
+
+    <h4>Additional Sub-Categories (entropy-based detection)</h4>
+    <ul>
+    <li>Boilerplate Bloat (getter/setter ratio, avg method length)</li>
+    <li>Verbose Comment Spam (comment-to-code ratio)</li>
+    <li>Over-Defensive Programming (null check density)</li>
+    <li>Poor Naming (single-letter identifiers)</li>
+    <li>Framework Misuse (exception swallowing patterns)</li>
+    <li>Excessive Documentation (javadoc-to-method ratio)</li>
+    </ul>
+
+    <h3>Key Features</h3>
+    <ul>
+    <li>- <b>Real-time Entropy Detection</b> - Analyze code changes as you type</li>
+    <li>- <b>Entropy Scoring</b> - Get instant entropy scores (0-100) per category</li>
+    <li>- <b>Security Detection</b> - Identify potential security vulnerabilities</li>
+    <li>- <b>Code Quality Insights</b> - Receive suggestions for code improvements</li>
+    <li>- <b>Inline Feedback</b> - See issues directly in your editor</li>
+    <li>- <b>Comprehensive Reports</b> - Detailed analysis with up to 7 prioritized findings</li>
+    <li>- <b>Performance Analysis</b> - Detect performance bottlenecks</li>
+    <li>- <b>Best Practices</b> - Ensure adherence to coding standards</li>
+    </ul>
+
+    <h3>Supported Technologies</h3>
+    <ul>
+    <li><b>Languages:</b> Java (full AST analysis), Kotlin, Python, JavaScript, TypeScript (diff-based)</li>
+    <li><b>Frameworks:</b> Spring, React, Angular, Vue.js, Django, Flask</li>
+    <li><b>Build Tools:</b> Maven, Gradle, npm, yarn, pip</li>
+    <li><b>IDE Integration:</b> IntelliJ IDEA 2023.3+</li>
+    </ul>
+
+    <h3>Getting Started</h3>
+    <ol>
+    <li><b>Install:</b> Install from JetBrains Marketplace</li>
+    <li><b>Auto-analysis:</b> Plugin analyzes code changes automatically</li>
+    <li><b>View Results:</b> Check the EntropyGuard tool window</li>
+    <li><b>Review Findings:</b> Click issues to see details and jump to source</li>
+    </ol>
+
+    <h3>Technical Stack</h3>
+    <ul>
+    <li><b>Java Parser:</b> Full AST analysis for Java</li>
+    <li><b>Tree-sitter:</b> Fuzzy duplicate detection + multi-language support</li>
+    <li><b>Kotlin + kotlinx.serialization + SnakeYAML</b></li>
+    <li><b>IntelliJ Platform SDK</b> (243.*+)</li>
+    </ul>
+
+    <h3>Free vs Premium</h3>
+    <ul>
+    <li><b>Free:</b> 7-day trial</li>
+    <li><b>Premium:</b> Unlimited usage (requires license)</li>
+    </ul>]]></description>
+  <!-- IntelliJ Platform Version Requirements -->
+  <depends>com.intellij.modules.platform</depends>
+  <!-- Extensions for Plugin Functionality -->
+  <extensions defaultExtensionNs="com.intellij">
+    <!-- Project Services -->
+    <projectService serviceImplementation="com.aicodequalityrisk.plugin.state.AnalysisStateStore" />
+    <projectService serviceImplementation="com.aicodequalityrisk.plugin.service.LicenseService" />
+    <projectService serviceImplementation="com.aicodequalityrisk.plugin.capture.DiffCaptureService" />
+    <projectService serviceImplementation="com.aicodequalityrisk.plugin.pipeline.AnalysisOrchestrator" />
+    <projectService serviceImplementation="com.aicodequalityrisk.plugin.analysis.LocalMockAnalyzerClient" />
+    <!-- Startup Activity -->
+    <postStartupActivity implementation="com.aicodequalityrisk.plugin.startup.PluginStartupActivity" />
+    <!-- Editor Integration -->
+    <linePainter implementation="com.aicodequalityrisk.plugin.editor.InlineRiskLinePainter" />
+  </extensions>
+  <actions>
+    <!-- Main Analysis Action -->
+    <action id="AI.CodeRisk.AnalyzeCurrentFile" class="com.aicodequalityrisk.plugin.actions.AnalyzeCurrentFileAction" text="Analyze Current File Risk" description="Run AI code risk analysis on the current file" icon="/icons/analyze_current_file.svg">
+      <add-to-group group-id="EditorPopupMenu" anchor="last" />
+      <add-to-group group-id="MainToolbarGeneralActionsGroup" anchor="last" />
+      <add-to-group group-id="MainToolBar" anchor="last" />
+    </action>
+    <action id="AI.CodeRisk.AnalyzeProject" class="com.aicodequalityrisk.plugin.actions.AnalyzeProjectAction" text="Analyze Project Risk" description="Run comprehensive AI risk analysis on the entire project" icon="/icons/analyze_current_file.svg">
+      <add-to-group group-id="ToolsMenu" anchor="last" />
+      <add-to-group group-id="MainToolbarGeneralActionsGroup" anchor="last" />
+      <add-to-group group-id="MainToolBar" anchor="last" />
+    </action>
+  </actions>
+  <change-notes><![CDATA[<h>1.1.0 - 2026-04-30</h>
+    <ul>
+        <li>Renamed plugin to EntropyGuard</li>
+        <li>Added detection of corrupted source files as a new top-level category</li>
+        <li>Improved detection of common AI duplication signals</li>
+        <li>Improved detection of common AI security anti-patterns</li>
+        <li>Got code generator tool 100% working</li>
+    </ul>
+    <h>1.0.3 - 2026-04-25</h>
+    <ul>
+        <li>Added new improved icon</li>
+        <li>Fixed licensing to correctly use IntelliJ Marketplace Trial API</li>
+        <li>Fixed code generator compilation issues</li>
+        <li>Added support for aichat, llm, and ollama CLI tools</li>
+    </ul>
+    <h>1.0.2 - 2026-04-17</h>
+    <ul>
+        <li>Disabled MCP server (temporarily)</li>
+        <li>Click to jump to problem files</li>
+        <li>UI layout improvements</li>
+    </ul>
+    <h>1.0.1 - 2026-04-14</h>
+    <ul>
+        <li>General improvements and bug fixes</li>
+    </ul>
+    <h>1.0.0 - 2026-04-12</h>
+    <ul>
+        <li>Initial release to IntelliJ Marketplace</li>
+        <li>Real-time code risk analysis</li>
+        <li>Security vulnerability detection</li>
+        <li>Code quality insights and suggestions</li>
+        <li>Inline editor feedback</li>
+        <li>Dedicated tool window for analysis results</li>
+    </ul>]]></change-notes>
+</idea-plugin>

@@ -405,7 +405,7 @@ class LlmCaller(
             conn.setRequestProperty("Content-Type", "application/json")
             conn.setRequestProperty("Authorization", "Bearer $apiKey")
             conn.setRequestProperty("HTTP-Referer", "https://aicodequalityrisk.local")
-            conn.setRequestProperty("X-Title", "AI Code Quality Risk Generator")
+            conn.setRequestProperty("X-Title", "EntropyGuard Generator")
             conn.doOutput = true
             conn.connectTimeout = 15000
             conn.readTimeout = 90000

@@ -283,7 +283,7 @@ class McpServerService(
 
     private fun formatScanResult(result: RiskResult): String {
         return buildString {
-            appendLine("=== AI Code Quality Risk Scan Results ===")
+            appendLine("=== EntropyGuard Scan Results ===")
             appendLine()
             appendLine("Risk Score: ${result.score}/100")
             appendLine()

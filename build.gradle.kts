@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "com.aicodequalityrisk"
-version = "1.1.0"
+version = "1.1.1"
 
 repositories {
     mavenCentral()
@@ -17,7 +17,7 @@ repositories {
 
 intellijPlatform {
     pluginConfiguration {
-        name = "AI Code Quality Risk"
+        name = "EntropyGuard"
     }
 
     // Run configuration

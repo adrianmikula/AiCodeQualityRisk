@@ -1,4 +1,4 @@
-# AI Code Quality Risk Test Results Index
+# EntropyGuard Test Results Index
 
 ## Overview
 
@@ -181,7 +181,7 @@ To add a new test run:
 
 ## Contact
 
-Framework: AI Code Quality Risk IntelliJ Plugin  
+Framework: EntropyGuard IntelliJ Plugin  
 Generator: ExperimentRunner.kt  
 Analyzer: DetectionRunner.kt  
 Parser: FileExtractor.kt
