@@ -106,7 +106,6 @@
     <h3>Licensing</h3>
     <ul>
     <li><b>Free Trial:</b> 7 days to evaluate</li>
-    <li><b>Lifetime License:</b> One-time purchase (limited time beta offer)</li>
     </ul>]]></description>
   <!-- IntelliJ Platform Version Requirements -->
   <depends>com.intellij.modules.platform</depends>

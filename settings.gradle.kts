@@ -11,4 +11,4 @@ plugins {
     id("org.jetbrains.kotlin.plugin.serialization") version "2.3.0" apply false
 }
 
-rootProject.name = "ai-code-quality-risk"
+rootProject.name = "SlopGuard"

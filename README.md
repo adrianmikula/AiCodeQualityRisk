@@ -219,7 +219,7 @@ Tracks metrics: duplicate literals, duplicate method calls, similar methods, LOC
 
 ## License
 
-This plugin is proprietary software. Free 7-day trial; lifetime license available (limited time beta offer).
+This plugin is proprietary software. Free 7-day trial.
 
 ## Change Log
 
@@ -260,7 +260,7 @@ This plugin is proprietary software. Free 7-day trial; lifetime license availabl
 
 - **Issues**: [GitHub Issues](https://github.com/adrianmikula/EntropyGuard/issues)
 - **Email**: adrian.m@tuta.io
-- **License**: Commercial (7-day trial, lifetime license for continued use - limited time beta offer)
+- **License**: Commercial (7-day trial)
 
 ---
 
