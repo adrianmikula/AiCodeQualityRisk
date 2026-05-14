@@ -261,7 +261,7 @@ If this works, you now have:
 
 * a **definitive benchmark**
 * a repeatable content engine
-* a strong foundation for EntropyGuard positioning
+* a strong foundation for SlopGuard [formerly EntropyGuard] positioning
 
 ---
 

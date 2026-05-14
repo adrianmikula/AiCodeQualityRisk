@@ -1,3 +1,5 @@
+> **ARCHIVED DOCUMENT** - This document records the branding discussion process. The final decision was to use **SlopGuard [formerly EntropyGuard]**.
+
 Yeah—**EntropyGuard / EntropyShield** are a noticeable step up in brand strength compared to DriftGuard and SlopGuard.
 
 You’re now in a much more “systems-level concept” naming space, which is exactly where serious developer tools live.

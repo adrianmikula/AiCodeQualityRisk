@@ -1,4 +1,4 @@
-# EntropyGuard Test Results Index
+# SlopGuard [formerly EntropyGuard] Test Results Index
 
 ## Overview
 
@@ -181,7 +181,7 @@ To add a new test run:
 
 ## Contact
 
-Framework: EntropyGuard IntelliJ Plugin  
+Framework: SlopGuard [formerly EntropyGuard] IntelliJ Plugin  
 Generator: ExperimentRunner.kt  
 Analyzer: DetectionRunner.kt  
 Parser: FileExtractor.kt

@@ -17,7 +17,7 @@ repositories {
 
 intellijPlatform {
     pluginConfiguration {
-        name = "EntropyGuard"
+        name = "SlopGuard [formerly EntropyGuard]"
     }
 
     // Run configuration

@@ -80,7 +80,7 @@ After building, inspect the generated plugin.xml:
 
 ```bash
 cd build/distributions
-unzip -p *.zip "EntropyGuard-*/resources/META-INF/plugin.xml" | grep "idea-version"
+unzip -p *.zip "SlopGuard [formerly EntropyGuard]-*/resources/META-INF/plugin.xml" | grep "idea-version"
 ```
 
 Expected output (open-ended):
