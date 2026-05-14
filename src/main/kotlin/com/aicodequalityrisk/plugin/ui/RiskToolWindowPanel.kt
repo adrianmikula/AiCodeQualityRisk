@@ -1,6 +1,7 @@
 package com.aicodequalityrisk.plugin.ui
 
 import com.aicodequalityrisk.plugin.analysis.Category
+import com.aicodequalityrisk.plugin.ui.UIStrings
 import com.aicodequalityrisk.plugin.model.AnalysisViewState
 import com.aicodequalityrisk.plugin.model.Finding
 import com.aicodequalityrisk.plugin.model.LicenseStatus
@@ -86,14 +87,14 @@ class RiskToolWindowPanel(private val project: Project) : JPanel(BorderLayout())
         minimumSize = UIConfig.LICENSE_BUTTON_WRAPPER_MIN
         add(licenseActionButton, BorderLayout.CENTER)
     }
-    private val overallScoreLabel = JLabel("Overall Risk Score: --")
-    private val complexityLabel = JLabel("Complexity: --")
-    private val duplicationLabel = JLabel("Duplication: --")
-    private val performanceLabel = JLabel("Performance: --")
-    private val securityLabel = JLabel("Security: --")
+    private val overallScoreLabel = JLabel(UIStrings.scoreOverall("--"))
+    private val complexityLabel = JLabel(UIStrings.scoreComplexity("--"))
+    private val duplicationLabel = JLabel(UIStrings.scoreDuplication("--"))
+    private val performanceLabel = JLabel(UIStrings.scorePerformance("--"))
+    private val securityLabel = JLabel(UIStrings.scoreSecurity("--"))
     private val lastAnalysisLabel = JLabel("")
     private val filesAnalyzedLabel = JLabel("")
-    private val findingsLabel = JLabel("Scan Results")
+    private val findingsLabel = JLabel(UIStrings.FINDINGS_LABEL)
     private val findingsContainer = JPanel().apply {
         layout = BoxLayout(this, BoxLayout.Y_AXIS)
     }
@@ -179,48 +180,48 @@ class RiskToolWindowPanel(private val project: Project) : JPanel(BorderLayout())
             if (isLocked) {
                 val status = licenseService?.getLicenseStatus()
                 val lockedMessage = when (status) {
-                    LicenseStatus.UNLICENSED -> "Install from Marketplace to start trial"
-                    LicenseStatus.TRIAL_EXPIRED -> "Trial expired - Upgrade to unlock"
-                    else -> "License required"
+                    LicenseStatus.UNLICENSED -> UIStrings.LICENSE_UNLICENSED_MESSAGE
+                    LicenseStatus.TRIAL_EXPIRED -> UIStrings.LICENSE_TRIAL_EXPIRED_MESSAGE
+                    else -> UIStrings.LICENSE_REQUIRED_MESSAGE
                 }
                 overallScoreLabel.text = "<html>Overall Risk Score: $lockedMessage</html>"
                 overallScoreLabel.foreground = Color.GRAY
-                complexityLabel.text = "Complexity: --"
-                duplicationLabel.text = "Duplication: --"
-                performanceLabel.text = "Performance: --"
-                securityLabel.text = "Security: --"
+                complexityLabel.text = UIStrings.scoreComplexity("--")
+                duplicationLabel.text = UIStrings.scoreDuplication("--")
+                performanceLabel.text = UIStrings.scorePerformance("--")
+                securityLabel.text = UIStrings.scoreSecurity("--")
                 renderFindings(emptyList())
             } else {
                 when (state) {
                     is AnalysisViewState.Idle -> {
-                        overallScoreLabel.text = "<html>Overall Risk Score: waiting for code changes</html>"
+                        overallScoreLabel.text = "<html>Overall Risk Score: ${UIStrings.STATUS_WAITING}</html>"
                         overallScoreLabel.foreground = Color.GRAY
-                        complexityLabel.text = "Complexity: --"
-                        duplicationLabel.text = "Duplication: --"
-                        performanceLabel.text = "Performance: --"
-                        securityLabel.text = "Security: --"
+                        complexityLabel.text = UIStrings.scoreComplexity("--")
+                        duplicationLabel.text = UIStrings.scoreDuplication("--")
+                        performanceLabel.text = UIStrings.scorePerformance("--")
+                        securityLabel.text = UIStrings.scoreSecurity("--")
                         lastAnalysisLabel.text = ""
                         filesAnalyzedLabel.text = ""
                         renderFindings(emptyList())
                     }
 
                     is AnalysisViewState.Loading -> {
-                        overallScoreLabel.text = "<html>Overall Risk Score: analyzing...</html>"
-                        complexityLabel.text = "Complexity: analyzing..."
-                        duplicationLabel.text = "Duplication: analyzing..."
-                        performanceLabel.text = "Performance: analyzing..."
-                        securityLabel.text = "Security: analyzing..."
+                        overallScoreLabel.text = "<html>Overall Risk Score: ${UIStrings.STATUS_ANALYZING}</html>"
+                        complexityLabel.text = UIStrings.scoreComplexity(UIStrings.STATUS_ANALYZING)
+                        duplicationLabel.text = UIStrings.scoreDuplication(UIStrings.STATUS_ANALYZING)
+                        performanceLabel.text = UIStrings.scorePerformance(UIStrings.STATUS_ANALYZING)
+                        securityLabel.text = UIStrings.scoreSecurity(UIStrings.STATUS_ANALYZING)
                         lastAnalysisLabel.text = ""
                         filesAnalyzedLabel.text = ""
                         renderFindings(emptyList())
                     }
 
                     is AnalysisViewState.Error -> {
-                        overallScoreLabel.text = "<html>Overall Risk Score: error</html>"
-                        complexityLabel.text = "Complexity: error"
-                        duplicationLabel.text = "Duplication: error"
-                        performanceLabel.text = "Performance: error"
-                        securityLabel.text = "Security: error"
+                        overallScoreLabel.text = "<html>Overall Risk Score: ${UIStrings.STATUS_ERROR}</html>"
+                        complexityLabel.text = UIStrings.scoreComplexity(UIStrings.STATUS_ERROR)
+                        duplicationLabel.text = UIStrings.scoreDuplication(UIStrings.STATUS_ERROR)
+                        performanceLabel.text = UIStrings.scorePerformance(UIStrings.STATUS_ERROR)
+                        securityLabel.text = UIStrings.scoreSecurity(UIStrings.STATUS_ERROR)
                         lastAnalysisLabel.text = ""
                         filesAnalyzedLabel.text = ""
                         renderFindings(emptyList())
@@ -230,17 +231,17 @@ class RiskToolWindowPanel(private val project: Project) : JPanel(BorderLayout())
                         val result = state.result
                         overallScoreLabel.text = "<html>Overall Risk Score: ${result.score}/100</html>"
                         overallScoreLabel.foreground = getScoreColor(result.score)
-                        complexityLabel.text = "Complexity: ${result.complexityConsolidated}/100"
+                        complexityLabel.text = UIStrings.scoreComplexity("${result.complexityConsolidated}/100")
                         complexityLabel.foreground = getScoreColor(result.complexityConsolidated)
-                        duplicationLabel.text = "Duplication: ${result.duplicationConsolidated}/100"
+                        duplicationLabel.text = UIStrings.scoreDuplication("${result.duplicationConsolidated}/100")
                         duplicationLabel.foreground = getScoreColor(result.duplicationConsolidated)
-                        performanceLabel.text = "Performance: ${result.performanceConsolidated}/100"
+                        performanceLabel.text = UIStrings.scorePerformance("${result.performanceConsolidated}/100")
                         performanceLabel.foreground = getScoreColor(result.performanceConsolidated)
-                        securityLabel.text = "Security: ${result.securityConsolidated}/100"
+                        securityLabel.text = UIStrings.scoreSecurity("${result.securityConsolidated}/100")
                         securityLabel.foreground = getScoreColor(result.securityConsolidated)
-                        lastAnalysisLabel.text = "last analysis: ${formatRelativeTime(result.timestamp)}"
+                        lastAnalysisLabel.text = UIStrings.timeLastAnalysis(formatRelativeTime(result.timestamp))
                         val fileCount = McpServerService.getInstance(project).getAnalyzedFileCount()
-                        filesAnalyzedLabel.text = "$fileCount files analyzed"
+                        filesAnalyzedLabel.text = UIStrings.timeFilesAnalyzed(fileCount)
                         logger.info("Updated score labels: overall=${overallScoreLabel.text}")
                         renderFindings(result.findings)
                     }
@@ -279,7 +280,7 @@ class RiskToolWindowPanel(private val project: Project) : JPanel(BorderLayout())
         }
         
         val toggleIcon = if (isExpanded) "▼" else "▶"
-        val headerLabel = JLabel("$toggleIcon ${category.name} (${findings.size} findings)").apply {
+        val headerLabel = JLabel("$toggleIcon ${category.name} (${UIStrings.findingsCount(findings.size)})").apply {
             font = Font("SansSerif", Font.BOLD, 13)
             border = javax.swing.BorderFactory.createEmptyBorder(8, 12, 8, 12)
         }
@@ -297,7 +298,7 @@ class RiskToolWindowPanel(private val project: Project) : JPanel(BorderLayout())
                 categoryExpanded[category] = newExpanded
                 
                 val newToggleIcon = if (newExpanded) "▼" else "▶"
-                headerLabel.text = "$newToggleIcon ${category.name} (${findings.size} findings)"
+                headerLabel.text = "$newToggleIcon ${category.name} (${UIStrings.findingsCount(findings.size)})"
                 contentPanel.isVisible = newExpanded
                 
                 revalidate()
@@ -306,7 +307,7 @@ class RiskToolWindowPanel(private val project: Project) : JPanel(BorderLayout())
         })
         
         if (findings.isNotEmpty()) {
-            val tableModel = object : DefaultTableModel(arrayOf("File", "Issue", "Severity"), 0) {
+            val tableModel = object : DefaultTableModel(arrayOf(UIStrings.TABLE_COLUMN_FILE, UIStrings.TABLE_COLUMN_ISSUE, UIStrings.TABLE_COLUMN_SEVERITY), 0) {
                 override fun isCellEditable(row: Int, column: Int): Boolean = false
             }
             val table = JTable(tableModel)
@@ -339,7 +340,7 @@ class RiskToolWindowPanel(private val project: Project) : JPanel(BorderLayout())
             tableScrollPane.preferredSize = Dimension(580, (findings.size.coerceAtMost(5) * 24 + 30))
             contentPanel.add(tableScrollPane)
         } else {
-            val emptyLabel = JLabel("No findings").apply {
+            val emptyLabel = JLabel(UIStrings.FINDINGS_EMPTY).apply {
                 font = Font("SansSerif", Font.ITALIC, 11)
                 foreground = Color.GRAY
                 border = javax.swing.BorderFactory.createEmptyBorder(8, 40, 8, 12)
@@ -379,23 +380,23 @@ class RiskToolWindowPanel(private val project: Project) : JPanel(BorderLayout())
             }
             LicenseStatus.TRIAL -> {
                 licenseBanner.background = UIConfig.LICENSE_ACTIVATED_BG
-                licenseLabel.text = "Trial Active - Full Access"
+                licenseLabel.text = UIStrings.LICENSE_TRIAL_ACTIVE_MESSAGE
                 licenseLabel.font = Font(licenseLabel.font.name, Font.BOLD, licenseLabel.font.size)
-                licenseActionButton.text = "Upgrade Now"
+                licenseActionButton.text = UIStrings.BUTTON_UPGRADE_NOW
                 scorePanel.remove(licenseBanner)
                 scorePanel.add(licenseBanner, 0)
             }
             LicenseStatus.TRIAL_EXPIRED -> {
                 licenseBanner.background = UIConfig.LICENSE_EXPIRED_BG
-                licenseLabel.text = "Trial Expired - Upgrade to Unlock"
-                licenseActionButton.text = "Upgrade Now"
+                licenseLabel.text = UIStrings.LICENSE_TRIAL_EXPIRED_BANNER
+                licenseActionButton.text = UIStrings.BUTTON_UPGRADE_NOW
                 scorePanel.remove(licenseBanner)
                 scorePanel.add(licenseBanner, 0)
             }
             LicenseStatus.UNLICENSED -> {
                 licenseBanner.background = UIConfig.LICENSE_UNLICENSED_BG
-                licenseLabel.text = "Install from Marketplace for Free Trial"
-                licenseActionButton.text = "Start Free Trial"
+                licenseLabel.text = UIStrings.LICENSE_UNLICENSED_BANNER
+                licenseActionButton.text = UIStrings.BUTTON_START_TRIAL
                 scorePanel.remove(licenseBanner)
                 scorePanel.add(licenseBanner, 0)
             }
@@ -451,11 +452,11 @@ class RiskToolWindowPanel(private val project: Project) : JPanel(BorderLayout())
         val hours = minutes / 60
         val days = hours / 24
         return when {
-            seconds < 60 -> "just now"
-            minutes < 60 -> "${minutes}m ago"
-            hours < 24 -> "${hours}h ago"
-            days < 7 -> "${days}d ago"
-            else -> "${days / 7}w ago"
+            seconds < 60 -> UIStrings.TIME_JUST_NOW
+            minutes < 60 -> UIStrings.timeMinutesAgo(minutes)
+            hours < 24 -> UIStrings.timeHoursAgo(hours)
+            days < 7 -> UIStrings.timeDaysAgo(days)
+            else -> UIStrings.timeWeeksAgo(days / 7)
         }
     }
 }

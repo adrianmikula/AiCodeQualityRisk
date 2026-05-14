@@ -61,15 +61,15 @@ class PluginStartupActivity : ProjectActivity {
             fire(TriggerType.FOCUS)
         }
 
-        // Register the "AI Code Risk" tool window programmatically without using ToolWindowFactory
+        // Register the "SlopGuard" tool window programmatically without using ToolWindowFactory
         ApplicationManager.getApplication().invokeLater {
             val toolWindowManager = ToolWindowManager.getInstance(project)
-            val existingToolWindow = toolWindowManager.getToolWindow("AI Code Risk")
+            val existingToolWindow = toolWindowManager.getToolWindow("SlopGuard")
             if (existingToolWindow == null) {
                 // Create tool window using the non-deprecated RegisterToolWindowTask API
                 val toolWindow = toolWindowManager.registerToolWindow(
                     RegisterToolWindowTask.notClosable(
-                        id = "AI Code Risk",
+                        id = "SlopGuard",
                         anchor = ToolWindowAnchor.RIGHT
                     )
                 )
