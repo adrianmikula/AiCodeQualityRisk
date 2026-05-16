@@ -17,6 +17,16 @@ import com.github.javaparser.ast.expr.MethodCallExpr
 import com.github.javaparser.ast.expr.StringLiteralExpr
 import com.github.javaparser.ast.stmt.*
 
+/**
+ * AST-based code analyzer for Java.
+ * 
+ * NOTE: This analyzer currently only supports Java via JavaParser.
+ * Kotlin and Scala are supported through TreeSitterFuzzyDetector for duplicate detection,
+ * but do not have full AST analysis (security patterns, complexity metrics, etc.).
+ * 
+ * Future enhancement: Add language-specific AST analyzers for Kotlin (using Kotlin compiler metadata)
+ * and Scala (using scalac or scala-meta) to provide parity with Java analysis capabilities.
+ */
 class ASTAnalyzer {
 
     private val logger = Logger.getInstance(ASTAnalyzer::class.java)

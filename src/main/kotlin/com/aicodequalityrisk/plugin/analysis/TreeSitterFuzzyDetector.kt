@@ -4,12 +4,16 @@ import com.intellij.openapi.diagnostic.Logger
 import org.treesitter.TSNode
 import org.treesitter.TSParser
 import org.treesitter.TreeSitterJava
+import org.treesitter.TreeSitterKotlin
 import org.treesitter.TreeSitterScala
 
 class TreeSitterFuzzyDetector {
     private val logger = Logger.getInstance(TreeSitterFuzzyDetector::class.java)
     private val javaParser = TSParser().apply {
         setLanguage(TreeSitterJava())
+    }
+    private val kotlinParser = TSParser().apply {
+        setLanguage(TreeSitterKotlin())
     }
     private val scalaParser = TSParser().apply {
         setLanguage(TreeSitterScala())
@@ -40,13 +44,14 @@ class TreeSitterFuzzyDetector {
 
     private fun isSupported(filePath: String?): Boolean {
         val extension = filePath?.substringAfterLast('.', missingDelimiterValue = "")?.lowercase()
-        return extension == "java" || extension == "kt" || extension == "scala"
+        return extension == "java" || extension == "kt" || extension == "kts" || extension == "scala"
     }
 
     private fun getParserForFile(filePath: String?): TSParser {
         val extension = filePath?.substringAfterLast('.', missingDelimiterValue = "")?.lowercase()
         return when (extension) {
             "scala" -> scalaParser
+            "kt", "kts" -> kotlinParser
             else -> javaParser
         }
     }
