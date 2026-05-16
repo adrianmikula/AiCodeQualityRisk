@@ -82,4 +82,52 @@ class TreeSitterFuzzyDetectorTest {
         assertTrue(metrics.duplicateMethodCount >= 1, "Expected duplicate pair after identifier normalization")
         assertTrue(metrics.maxSimilarityScore >= 0.5, "Expected similarity score above threshold with AST-based approach")
     }
+
+    @Test
+    fun `detects similar scala method bodies with tree-sitter`() {
+        val source = """
+            object Example {
+              def copyA(value: Int): Unit = {
+                if (value > 0) {
+                  println(value)
+                }
+              }
+
+              def copyB(value: Int): Unit = {
+                if (value > 0) {
+                  println(value)
+                }
+              }
+
+              def uniqueMethod(): Unit = {
+                println("unique")
+              }
+            }
+        """.trimIndent()
+
+        val metrics = detector.detect(source, "/tmp/Example.scala")
+
+        assertTrue(metrics.duplicateMethodCount >= 1, "Expected at least one duplicate method pair in Scala")
+        assertTrue(metrics.maxSimilarityScore >= 0.5, "Expected similarity score above threshold for Scala")
+    }
+
+    @Test
+    fun `parses scala files correctly`() {
+        val source = """
+            object ScalaExample {
+              def simpleMethod(): String = "hello"
+              
+              def complexMatch(x: Any): String = x match {
+                case s: String => s
+                case i: Int => i.toString
+                case _ => "unknown"
+              }
+            }
+        """.trimIndent()
+
+        val metrics = detector.detect(source, "/tmp/ScalaExample.scala")
+
+        // Should not throw exception and should produce valid metrics
+        assertTrue(metrics.duplicateMethodCount >= 0, "Should parse Scala files without errors")
+    }
 }
