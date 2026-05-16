@@ -4,11 +4,19 @@ import com.intellij.openapi.diagnostic.Logger
 import org.treesitter.TSNode
 import org.treesitter.TSParser
 import org.treesitter.TreeSitterJava
+import org.treesitter.TreeSitterKotlin
+import org.treesitter.TreeSitterScala
 
 class TreeSitterFuzzyDetector {
     private val logger = Logger.getInstance(TreeSitterFuzzyDetector::class.java)
-    private val parser = TSParser().apply {
+    private val javaParser = TSParser().apply {
         setLanguage(TreeSitterJava())
+    }
+    private val kotlinParser = TSParser().apply {
+        setLanguage(TreeSitterKotlin())
+    }
+    private val scalaParser = TSParser().apply {
+        setLanguage(TreeSitterScala())
     }
     private val thresholdCalculator = AdaptiveThresholdCalculator()
     private val shingleBuilder = MultiGranularShingleBuilder()
@@ -21,6 +29,7 @@ class TreeSitterFuzzyDetector {
         if (!isSupported(filePath)) return FuzzyMetrics()
 
         return try {
+            val parser = getParserForFile(filePath)
             val tree = parser.parseString(null, code)
             val metrics = analyzeTree(tree.rootNode, code, filePath)
             if (metrics.duplicateMethodCount > 0) {
@@ -35,7 +44,16 @@ class TreeSitterFuzzyDetector {
 
     private fun isSupported(filePath: String?): Boolean {
         val extension = filePath?.substringAfterLast('.', missingDelimiterValue = "")?.lowercase()
-        return extension == "java" || extension == "kt"
+        return extension == "java" || extension == "kt" || extension == "kts" || extension == "scala"
+    }
+
+    private fun getParserForFile(filePath: String?): TSParser {
+        val extension = filePath?.substringAfterLast('.', missingDelimiterValue = "")?.lowercase()
+        return when (extension) {
+            "scala" -> scalaParser
+            "kt", "kts" -> kotlinParser
+            else -> javaParser
+        }
     }
 
 
@@ -114,7 +132,14 @@ class TreeSitterFuzzyDetector {
 
     private fun collectMethodNodes(node: TSNode): List<TSNode> {
         val results = mutableListOf<TSNode>()
+        // Java/Kotlin method types
         if (node.getType() == "method_declaration" || node.getType() == "constructor_declaration") {
+            results.add(node)
+        }
+        // Scala method types
+        if (node.getType() == "function_definition" ||
+            node.getType() == "template_definition" ||
+            node.getType() == "object_definition") {
             results.add(node)
         }
         for (index in 0 until node.getChildCount()) {

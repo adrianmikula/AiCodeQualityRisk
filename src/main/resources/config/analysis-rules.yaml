@@ -501,3 +501,64 @@ rules:
       title: "Excessive null returns detected (AST)"
       detail: "Code contains excessive .orElse(null) patterns or long null propagation chains. This indicates systemic null handling issues often found in AI-generated code."
       severity: "MEDIUM"
+
+  # Scala-specific rules
+  - name: "scala_pattern_matching_complexity"
+    pattern:
+      type: "regex"
+      target: "fileSnapshot"
+      value: "match\\s*\\{[^}]{50,}"
+    scoreDelta: 18
+    category: "COMPLEXITY"
+    finding:
+      title: "Complex pattern matching detected"
+      detail: "Large pattern match expressions can be hard to understand and maintain. Consider breaking into smaller functions."
+      severity: "MEDIUM"
+
+  - name: "scala_implicit_usage"
+    pattern:
+      type: "regex"
+      target: "fileSnapshot"
+      value: "implicit\\s+(?:val|def|class|object)"
+    scoreDelta: 14
+    category: "COMPLEXITY"
+    finding:
+      title: "Implicit usage detected"
+      detail: "Implicit parameters and conversions can make code harder to understand and debug. Use explicit parameters where possible."
+      severity: "MEDIUM"
+
+  - name: "scala_for_comprehension_nesting"
+    pattern:
+      type: "regex"
+      target: "fileSnapshot"
+      value: "for\\s*\\{[^}]*;[^}]*;[^}]*\\}"
+    scoreDelta: 16
+    category: "COMPLEXITY"
+    finding:
+      title: "Nested for-comprehension detected"
+      detail: "Deeply nested for-comprehensions can be hard to read. Consider flattening or using helper functions."
+      severity: "MEDIUM"
+
+  - name: "scala_case_class_boilerplate"
+    pattern:
+      type: "regex"
+      target: "fileSnapshot"
+      value: "case\\s+class\\s+\\w+\\([^)]{100,}"
+    scoreDelta: 12
+    category: "DUPLICATION"
+    finding:
+      title: "Large case class detected"
+      detail: "Case classes with many parameters may indicate data structure bloat. Consider splitting into smaller classes or using tuples."
+      severity: "LOW"
+
+  - name: "scala_option_get"
+    pattern:
+      type: "regex"
+      target: "fileSnapshot"
+      value: "\\.get\\s*\\)|\\.getOrElse\\s*\\(null\\)"
+    scoreDelta: 20
+    category: "SECURITY"
+    finding:
+      title: "Unsafe Option.get usage"
+      detail: "Using .get or .getOrElse(null) on Options can cause runtime exceptions. Use pattern matching or safe alternatives like .getOrElse(default)."
+      severity: "HIGH"

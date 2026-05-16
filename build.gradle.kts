@@ -39,6 +39,8 @@ dependencies {
     implementation("com.github.javaparser:javaparser-core:3.25.8")
     implementation("io.github.bonede:tree-sitter:0.26.6")
     implementation("io.github.bonede:tree-sitter-java:0.23.5")
+    implementation("io.github.bonede:tree-sitter-scala:0.24.0")
+    implementation("io.github.bonede:tree-sitter-kotlin:0.3.8.1")
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.jetbrains.kotlin:kotlin-test:2.3.0")
     testImplementation("org.junit.vintage:junit-vintage-engine:5.10.0")

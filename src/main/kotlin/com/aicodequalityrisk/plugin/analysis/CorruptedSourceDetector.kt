@@ -4,12 +4,20 @@ import com.intellij.openapi.diagnostic.Logger
 import com.github.javaparser.JavaParser
 import org.treesitter.TSParser
 import org.treesitter.TreeSitterJava
+import org.treesitter.TreeSitterKotlin
+import org.treesitter.TreeSitterScala
 
 class CorruptedSourceDetector {
     private val logger = Logger.getInstance(CorruptedSourceDetector::class.java)
     private val javaParser = JavaParser()
-    private val treeSitterParser = TSParser().apply {
+    private val treeSitterJavaParser = TSParser().apply {
         setLanguage(TreeSitterJava())
+    }
+    private val treeSitterKotlinParser = TSParser().apply {
+        setLanguage(TreeSitterKotlin())
+    }
+    private val treeSitterScalaParser = TSParser().apply {
+        setLanguage(TreeSitterScala())
     }
 
     fun detect(code: String, filePath: String?): CorruptedSourceMetrics {
@@ -40,10 +48,12 @@ class CorruptedSourceDetector {
 
     private fun isSupported(filePath: String?): Boolean {
         val extension = filePath?.substringAfterLast('.', missingDelimiterValue = "")?.lowercase()
-        return extension == "java" || extension == "kt"
+        return extension == "java" || extension == "kt" || extension == "kts" || extension == "scala"
     }
 
     private fun checkParseFailure(code: String, filePath: String?): Boolean {
+        val extension = filePath?.substringAfterLast('.', missingDelimiterValue = "")?.lowercase()
+        
         val javaParserFailed = try {
             val result = javaParser.parse(code)
             !result.isSuccessful
@@ -51,15 +61,25 @@ class CorruptedSourceDetector {
             true
         }
 
+        // Use appropriate tree-sitter parser based on file extension
         val treeSitterFailed = try {
-            treeSitterParser.parseString(null, code) == null
+            val parser = when (extension) {
+                "scala" -> treeSitterScalaParser
+                "kt", "kts" -> treeSitterKotlinParser
+                else -> treeSitterJavaParser
+            }
+            parser.parseString(null, code) == null
         } catch (e: Exception) {
             true
         }
 
-        // Only mark as parse failure if BOTH parsers fail
-        // (single parser failure might be due to version-specific syntax)
-        return javaParserFailed && treeSitterFailed
+        // For Java files, require BOTH parsers to fail
+        // For Kotlin/Scala, only tree-sitter parser is available
+        return if (extension == "java") {
+            javaParserFailed && treeSitterFailed
+        } else {
+            treeSitterFailed
+        }
     }
 
     private fun countMarkdownTokens(code: String): Int {

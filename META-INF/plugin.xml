@@ -71,7 +71,7 @@
     <li><b>Real-time Protection:</b> Analyze code changes as you type, catching issues before they reach your repository</li>
     <li><b>Quality Scoring:</b> Get instant risk scores (0-100) with prioritized findings</li>
     <li><b>Inline Feedback:</b> See issues highlighted directly in your editor</li>
-    <li><b>Comprehensive Coverage:</b> Java (full analysis), Kotlin, Python, JavaScript, TypeScript</li>
+    <li><b>Comprehensive Coverage:</b> Java (full AST analysis), Kotlin & Scala (duplicate detection & corrupted source detection)</li>
     <li><b>Team Consistency:</b> Enforce quality standards across AI-assisted development</li>
     </ul>
 
@@ -98,7 +98,7 @@
 
     <h3>Supported Technologies</h3>
     <ul>
-    <li><b>Languages:</b> Java (full analysis), Kotlin, Python, JavaScript, TypeScript</li>
+    <li><b>Languages:</b> Java (full AST analysis), Kotlin & Scala (duplicate detection & corrupted source detection)</li>
     <li><b>Frameworks:</b> Spring, React, Angular, Vue.js, Django, Flask</li>
     <li><b>IDE:</b> IntelliJ IDEA 2023.3+</li>
     </ul>
